@@ -16,11 +16,17 @@ import { useToast } from "@/hooks/use-toast";
 
 const categories = [
   { id: "trademarks", label: "Товарный знак" },
-  { id: "patents", label: "Патент" },
-  { id: "software", label: "Программа / Код" },
-  { id: "copyrights", label: "Авторское право" },
+  { id: "patents", label: "Патент (изобретение, полезная модель)" },
   { id: "industrial", label: "Промышленный образец" },
+  { id: "software", label: "ПО, код, IT-продукт" },
+  { id: "copyrights", label: "Авторское право (текст, дизайн, фото)" },
+  { id: "databases", label: "База данных" },
+  { id: "knowhow", label: "Ноу-хау / Коммерческая тайна" },
+  { id: "specifications", label: "Технические спецификации" },
   { id: "commercial", label: "Коммерческое обозначение" },
+  { id: "educational", label: "Обучающие материалы" },
+  { id: "methods", label: "Методики и технологии" },
+  { id: "prototypes", label: "Прототипы и R&D разработки" },
 ];
 
 const Sell = () => {

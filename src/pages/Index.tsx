@@ -3,6 +3,7 @@ import Hero from "@/components/home/Hero";
 import Categories from "@/components/home/Categories";
 import HowItWorks from "@/components/home/HowItWorks";
 import FeaturedListings from "@/components/home/FeaturedListings";
+import WhyUs from "@/components/home/WhyUs";
 import CTASection from "@/components/home/CTASection";
 
 const Index = () => {
@@ -12,6 +13,7 @@ const Index = () => {
       <Categories />
       <FeaturedListings />
       <HowItWorks />
+      <WhyUs />
       <CTASection />
     </Layout>
   );
