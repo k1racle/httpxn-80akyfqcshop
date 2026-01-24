@@ -106,14 +106,50 @@ export const useAdminSubmissions = () => {
 
       if (error) throw error;
 
+      // If status is 'published', create a listing in ip_listings
+      if (status === "published") {
+        const submission = submissions.find((s) => s.id === id);
+        if (submission) {
+          const { error: listingError } = await supabase
+            .from("ip_listings")
+            .insert({
+              submission_id: submission.id,
+              user_id: submission.user_id,
+              category: submission.category,
+              name: submission.name,
+              description: submission.description,
+              registration_number: submission.registration_number,
+              price: submission.price,
+              price_negotiable: submission.price_negotiable,
+              documents: submission.documents,
+              status: "published",
+            });
+
+          if (listingError) {
+            console.error("Error creating listing:", listingError);
+            toast({
+              title: "Внимание",
+              description: "Статус обновлён, но не удалось создать листинг в каталоге",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Объект опубликован",
+              description: "Заявка одобрена и объект добавлен в каталог",
+            });
+          }
+        }
+      } else {
+        toast({
+          title: "Статус обновлён",
+          description: `Заявка переведена в статус: ${status}`,
+        });
+      }
+
       setSubmissions((prev) =>
         prev.map((s) => (s.id === id ? { ...s, ...updateData } : s))
       );
 
-      toast({
-        title: "Статус обновлён",
-        description: `Заявка переведена в статус: ${status}`,
-      });
       return true;
     } catch (error) {
       console.error("Error updating submission:", error);
