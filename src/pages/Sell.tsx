@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Shield, Upload, CheckCircle, FileText, AlertCircle } from "lucide-react";
+import { Shield, Upload, CheckCircle, FileText, AlertCircle, X, File } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const categories = [
   { id: "trademarks", label: "Товарный знак" },
@@ -29,23 +32,148 @@ const categories = [
   { id: "prototypes", label: "Прототипы и R&D разработки" },
 ];
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+
 const Sell = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [category, setCategory] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+
+  const validateFile = (file: File): string | null => {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return `Неподдерживаемый формат: ${file.name}`;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return `Файл слишком большой: ${file.name} (макс. 10 МБ)`;
+    }
+    return null;
+  };
+
+  const handleFiles = (newFiles: FileList | null) => {
+    if (!newFiles) return;
+    
+    const validFiles: File[] = [];
+    const errors: string[] = [];
+    
+    Array.from(newFiles).forEach(file => {
+      const error = validateFile(file);
+      if (error) {
+        errors.push(error);
+      } else if (!files.some(f => f.name === file.name)) {
+        validFiles.push(file);
+      }
+    });
+    
+    if (errors.length > 0) {
+      toast({
+        title: "Ошибка загрузки",
+        description: errors.join(", "),
+        variant: "destructive",
+      });
+    }
+    
+    if (validFiles.length > 0) {
+      setFiles(prev => [...prev, ...validFiles]);
+    }
+  };
+
+  const removeFile = (fileName: string) => {
+    setFiles(prev => prev.filter(f => f.name !== fileName));
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFiles(e.dataTransfer.files);
+  };
+
+  const uploadFiles = async (): Promise<string[]> => {
+    if (!user || files.length === 0) return [];
+    
+    const uploadedPaths: string[] = [];
+    
+    for (const file of files) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      
+      const { error } = await supabase.storage
+        .from('ip-documents')
+        .upload(fileName, file);
+      
+      if (error) {
+        throw new Error(`Ошибка загрузки файла: ${file.name}`);
+      }
+      
+      uploadedPaths.push(fileName);
+    }
+    
+    return uploadedPaths;
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Требуется авторизация",
+        description: "Войдите в аккаунт для размещения объектов",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+    
     setIsSubmitting(true);
     
-    // Simulate submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    toast({
-      title: "Заявка отправлена",
-      description: "Мы свяжемся с вами для уточнения деталей в течение 24 часов.",
-    });
-    
-    setIsSubmitting(false);
+    try {
+      // Upload files
+      const uploadedPaths = await uploadFiles();
+      
+      // Here you would save the form data to database
+      // For now, just show success message
+      console.log("Uploaded files:", uploadedPaths);
+      
+      toast({
+        title: "Заявка отправлена",
+        description: "Мы свяжемся с вами для уточнения деталей в течение 24 часов.",
+      });
+      
+      // Reset form
+      setFiles([]);
+      setCategory("");
+      (e.target as HTMLFormElement).reset();
+    } catch (error: any) {
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось отправить заявку",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' Б';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
   };
 
   return (
@@ -70,7 +198,7 @@ const Sell = () => {
                 {/* Category */}
                 <div className="space-y-2">
                   <Label htmlFor="category">Тип объекта ИС *</Label>
-                  <Select required>
+                  <Select value={category} onValueChange={setCategory} required>
                     <SelectTrigger>
                       <SelectValue placeholder="Выберите категорию" />
                     </SelectTrigger>
@@ -132,7 +260,25 @@ const Sell = () => {
                 {/* Documents Upload */}
                 <div className="space-y-2">
                   <Label>Документы</Label>
-                  <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    onChange={(e) => handleFiles(e.target.files)}
+                    className="hidden"
+                  />
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
+                      isDragging 
+                        ? "border-primary bg-primary/5" 
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
                     <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
                     <p className="text-sm text-muted-foreground mb-2">
                       Перетащите файлы или нажмите для загрузки
@@ -141,6 +287,37 @@ const Sell = () => {
                       PDF, JPG, PNG до 10 МБ
                     </p>
                   </div>
+                  
+                  {/* File list */}
+                  {files.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      {files.map((file) => (
+                        <div 
+                          key={file.name} 
+                          className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <File className="h-5 w-5 text-primary" />
+                            <div>
+                              <p className="text-sm font-medium truncate max-w-[200px]">
+                                {file.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatFileSize(file.size)}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeFile(file.name)}
+                            className="p-1 hover:bg-background rounded-md transition-colors"
+                          >
+                            <X className="h-4 w-4 text-muted-foreground" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Contact Info */}
@@ -165,6 +342,18 @@ const Sell = () => {
                     <Input id="phone" type="tel" placeholder="+7 (900) 123-45-67" required />
                   </div>
                 </div>
+
+                {/* Auth notice */}
+                {!user && (
+                  <div className="p-4 rounded-lg bg-accent border border-border">
+                    <p className="text-sm text-accent-foreground">
+                      Для загрузки файлов и отправки заявки необходимо{" "}
+                      <a href="/auth" className="text-primary underline hover:no-underline">
+                        войти в аккаунт
+                      </a>
+                    </p>
+                  </div>
+                )}
 
                 {/* Submit */}
                 <Button 
