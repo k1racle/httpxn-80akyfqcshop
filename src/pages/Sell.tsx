@@ -16,6 +16,7 @@ import { Shield, Upload, CheckCircle, FileText, AlertCircle, X, File } from "luc
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import AiDescriptionHelper from "@/components/sell/AiDescriptionHelper";
 
 const categories = [
   { id: "trademarks", label: "Товарный знак" },
@@ -44,6 +45,9 @@ const Sell = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [category, setCategory] = useState("");
+  const [title, setTitle] = useState("");
+  const [regNumber, setRegNumber] = useState("");
+  const [description, setDescription] = useState("");
   const [isDragging, setIsDragging] = useState(false);
 
   const validateFile = (file: File): string | null => {
@@ -163,6 +167,9 @@ const Sell = () => {
       // Reset form
       setFiles([]);
       setCategory("");
+      setTitle("");
+      setRegNumber("");
+      setDescription("");
       (e.target as HTMLFormElement).reset();
     } catch (error: any) {
       toast({
@@ -223,6 +230,8 @@ const Sell = () => {
                   <Input
                     id="title"
                     placeholder="Например: Товарный знак «ЭкоТех»"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
                     required
                   />
                 </div>
@@ -233,19 +242,35 @@ const Sell = () => {
                   <Input
                     id="regNumber"
                     placeholder="Номер свидетельства или патента"
+                    value={regNumber}
+                    onChange={(e) => setRegNumber(e.target.value)}
                     required
                   />
                 </div>
 
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label htmlFor="description">Описание *</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="description">Описание *</Label>
+                    <AiDescriptionHelper
+                      category={category}
+                      title={title}
+                      registrationNumber={regNumber}
+                      currentDescription={description}
+                      onDescriptionGenerated={setDescription}
+                    />
+                  </div>
                   <Textarea
                     id="description"
                     placeholder="Опишите объект, его назначение и преимущества..."
-                    rows={5}
+                    rows={6}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                     required
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Нажмите «Сгенерировать с AI» для создания профессионального описания
+                  </p>
                 </div>
 
                 {/* Price */}
