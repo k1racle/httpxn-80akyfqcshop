@@ -154,7 +154,7 @@ const Dashboard = () => {
               </TabsTrigger>
               <TabsTrigger value="my-purchases" className="gap-2">
                 <Package className="h-4 w-4" />
-                <span className="hidden sm:inline">Мои объекты</span>
+                <span className="hidden sm:inline">Мои объекты ИС</span>
                 {orders.length > 0 && (
                   <Badge variant="secondary" className="ml-1">
                     {orders.length}
@@ -163,7 +163,7 @@ const Dashboard = () => {
               </TabsTrigger>
               <TabsTrigger value="my-sales" className="gap-2">
                 <ClipboardList className="h-4 w-4" />
-                <span className="hidden sm:inline">Продажа</span>
+                <span className="hidden sm:inline">Мои продажи ИС</span>
                 {myListings.length > 0 && (
                   <Badge variant="secondary" className="ml-1">
                     {myListings.length}
