@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,10 +50,17 @@ const Dashboard = () => {
   const { cartItems, toggleCart } = useCart();
   const { listings: myListings, loading: listingsLoading } = useMyListings();
   const { orders, loading: ordersLoading } = useOrders();
+  const [searchParams] = useSearchParams();
 
   const [favoritesWithListings, setFavoritesWithListings] = useState<FavoriteWithListing[]>([]);
   const [cartWithListings, setCartWithListings] = useState<CartItemWithListing[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  
+  // Get tab from URL params, default to "favorites"
+  const tabFromUrl = searchParams.get("tab");
+  const defaultTab = ["favorites", "cart", "my-purchases", "my-sales"].includes(tabFromUrl || "") 
+    ? tabFromUrl! 
+    : "favorites";
 
   useEffect(() => {
     const fetchListingsData = async () => {
@@ -132,7 +139,7 @@ const Dashboard = () => {
             <p className="text-muted-foreground">{user.email}</p>
           </div>
 
-          <Tabs defaultValue="favorites" className="space-y-6">
+          <Tabs defaultValue={defaultTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
               <TabsTrigger value="favorites" className="gap-2">
                 <Heart className="h-4 w-4" />
