@@ -14,6 +14,129 @@ export type Database = {
   }
   public: {
     Tables: {
+      cart_items: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "ip_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "ip_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ip_listings: {
+        Row: {
+          cart_count: number | null
+          category: string
+          created_at: string
+          description: string | null
+          documents: string[] | null
+          favorites_count: number | null
+          id: string
+          name: string
+          price: number | null
+          price_negotiable: boolean | null
+          registration_number: string | null
+          status: string
+          submission_id: string | null
+          updated_at: string
+          user_id: string
+          views_count: number | null
+        }
+        Insert: {
+          cart_count?: number | null
+          category: string
+          created_at?: string
+          description?: string | null
+          documents?: string[] | null
+          favorites_count?: number | null
+          id?: string
+          name: string
+          price?: number | null
+          price_negotiable?: boolean | null
+          registration_number?: string | null
+          status?: string
+          submission_id?: string | null
+          updated_at?: string
+          user_id: string
+          views_count?: number | null
+        }
+        Update: {
+          cart_count?: number | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          documents?: string[] | null
+          favorites_count?: number | null
+          id?: string
+          name?: string
+          price?: number | null
+          price_negotiable?: boolean | null
+          registration_number?: string | null
+          status?: string
+          submission_id?: string | null
+          updated_at?: string
+          user_id?: string
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ip_listings_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "ip_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ip_requests: {
         Row: {
           admin_notes: string | null
@@ -125,6 +248,88 @@ export type Database = {
         }
         Relationships: []
       }
+      listing_views: {
+        Row: {
+          id: string
+          ip_address: string | null
+          listing_id: string
+          viewed_at: string
+          viewer_id: string | null
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          listing_id: string
+          viewed_at?: string
+          viewer_id?: string | null
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          listing_id?: string
+          viewed_at?: string
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_views_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "ip_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          listing_id: string | null
+          listing_snapshot: Json
+          payment_expires_at: string | null
+          payment_url: string | null
+          price: number
+          status: Database["public"]["Enums"]["order_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          listing_snapshot: Json
+          payment_expires_at?: string | null
+          payment_url?: string | null
+          price: number
+          status?: Database["public"]["Enums"]["order_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          listing_snapshot?: Json
+          payment_expires_at?: string | null
+          payment_url?: string | null
+          price?: number
+          status?: Database["public"]["Enums"]["order_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "ip_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -191,6 +396,14 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      order_status:
+        | "pending"
+        | "manager_review"
+        | "payment_ready"
+        | "payment_expired"
+        | "paid"
+        | "completed"
+        | "cancelled"
       request_status: "pending" | "in_progress" | "completed" | "cancelled"
       submission_status:
         | "pending"
@@ -327,6 +540,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      order_status: [
+        "pending",
+        "manager_review",
+        "payment_ready",
+        "payment_expired",
+        "paid",
+        "completed",
+        "cancelled",
+      ],
       request_status: ["pending", "in_progress", "completed", "cancelled"],
       submission_status: [
         "pending",
