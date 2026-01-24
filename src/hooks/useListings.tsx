@@ -4,6 +4,7 @@ import { useAuth } from "./useAuth";
 
 export interface Listing {
   id: string;
+  submission_id?: string | null;
   user_id: string;
   category: string;
   name: string;
