@@ -29,7 +29,7 @@ export const useListings = () => {
       const { data, error } = await supabase
         .from("ip_listings")
         .select("*")
-        .eq("status", "active")
+        .in("status", ["active", "published"])
         .order("created_at", { ascending: false });
 
       if (error) throw error;

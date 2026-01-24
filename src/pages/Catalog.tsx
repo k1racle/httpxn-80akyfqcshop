@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, SlidersHorizontal } from "lucide-react";
+import { Search, Filter, SlidersHorizontal, Loader2 } from "lucide-react";
 import ListingCard from "@/components/catalog/ListingCard";
+import { useListings, Listing } from "@/hooks/useListings";
 
 const categories = [
   { id: "all", label: "Все категории" },
@@ -21,94 +22,52 @@ const categories = [
   { id: "copyrights", label: "Авторские права" },
   { id: "industrial", label: "Промышленные образцы" },
   { id: "commercial", label: "Коммерческие обозначения" },
+  { id: "databases", label: "Базы данных" },
+  { id: "knowhow", label: "Ноу-хау" },
+  { id: "specifications", label: "ТУ и техдокументация" },
+  { id: "educational", label: "Образовательные материалы" },
+  { id: "prototypes", label: "Прототипы и НИОКР" },
 ];
 
-const listings = [
-  {
-    id: "1",
-    title: "Товарный знак «ЭкоТех»",
-    category: "trademarks",
-    categoryLabel: "Товарные знаки",
-    registrationNumber: "№ 845672",
-    price: 450000,
-    priceFormatted: "450 000 ₽",
-    status: "verified",
-    views: 234,
-    description: "Зарегистрированный товарный знак для экологически чистых технологий. Действует до 2034 года.",
-  },
-  {
-    id: "2",
-    title: "Патент на способ очистки воды",
-    category: "patents",
-    categoryLabel: "Патенты",
-    registrationNumber: "RU 2756891",
-    price: 1200000,
-    priceFormatted: "1 200 000 ₽",
-    status: "verified",
-    views: 189,
-    description: "Инновационный метод очистки промышленных стоков с применением наноматериалов.",
-  },
-  {
-    id: "3",
-    title: "CRM-система для логистики",
-    category: "software",
-    categoryLabel: "Программы и код",
-    registrationNumber: "2024612345",
-    price: 890000,
-    priceFormatted: "890 000 ₽",
-    status: "verified",
-    views: 312,
-    description: "Готовое решение для автоматизации логистических процессов с исходным кодом.",
-  },
-  {
-    id: "4",
-    title: "Дизайн упаковки косметики",
-    category: "industrial",
-    categoryLabel: "Промышленные образцы",
-    registrationNumber: "№ 128934",
-    price: 280000,
-    priceFormatted: "280 000 ₽",
-    status: "pending",
-    views: 156,
-    description: "Оригинальный дизайн упаковки для линейки косметических средств.",
-  },
-  {
-    id: "5",
-    title: "Товарный знак «SmartHome»",
-    category: "trademarks",
-    categoryLabel: "Товарные знаки",
-    registrationNumber: "№ 912456",
-    price: 680000,
-    priceFormatted: "680 000 ₽",
-    status: "verified",
-    views: 421,
-    description: "Международный товарный знак в категории умный дом и IoT устройства.",
-  },
-  {
-    id: "6",
-    title: "Патент на медицинское устройство",
-    category: "patents",
-    categoryLabel: "Патенты",
-    registrationNumber: "RU 2789456",
-    price: 3500000,
-    priceFormatted: "3 500 000 ₽",
-    status: "verified",
-    views: 267,
-    description: "Уникальное устройство для неинвазивной диагностики сердечно-сосудистых заболеваний.",
-  },
-];
+const categoryLabels: Record<string, string> = {
+  trademarks: "Товарные знаки",
+  patents: "Патенты",
+  software: "Программы и код",
+  copyrights: "Авторские права",
+  industrial: "Промышленные образцы",
+  commercial: "Коммерческие обозначения",
+  databases: "Базы данных",
+  knowhow: "Ноу-хау",
+  specifications: "ТУ и техдокументация",
+  educational: "Образовательные материалы",
+  prototypes: "Прототипы и НИОКР",
+};
+
+const formatPrice = (price: number | null): string => {
+  if (price === null) return "Договорная";
+  return new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency: "RUB",
+    maximumFractionDigits: 0,
+  }).format(price);
+};
 
 const Catalog = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const categoryFilter = searchParams.get("category") || "all";
+  
+  const { listings, loading } = useListings();
 
-  const filteredListings = listings.filter((item) => {
-    const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredListings = useMemo(() => {
+    return listings.filter((item) => {
+      const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
+      const matchesSearch = 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+      return matchesCategory && matchesSearch;
+    });
+  }, [listings, categoryFilter, searchQuery]);
 
   const handleCategoryChange = (value: string) => {
     if (value === "all") {
@@ -127,7 +86,7 @@ const Catalog = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">Каталог интеллектуальной собственности</h1>
             <p className="text-muted-foreground">
-              {filteredListings.length} объектов с подтверждённой документацией
+              {loading ? "Загрузка..." : `${filteredListings.length} объектов с подтверждённой документацией`}
             </p>
           </div>
 
@@ -161,36 +120,55 @@ const Catalog = () => {
             </Button>
           </div>
 
-          {/* Listings Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredListings.map((item) => (
-              <ListingCard
-                key={item.id}
-                id={item.id}
-                title={item.title}
-                category={item.category}
-                categoryLabel={item.categoryLabel}
-                registrationNumber={item.registrationNumber}
-                price={item.price}
-                priceFormatted={item.priceFormatted}
-                status={item.status as "verified" | "pending"}
-                views={item.views}
-                description={item.description}
-              />
-            ))}
-          </div>
+          {/* Loading State */}
+          {loading && (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          )}
 
-          {filteredListings.length === 0 && (
+          {/* Listings Grid */}
+          {!loading && filteredListings.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredListings.map((item) => (
+                <ListingCard
+                  key={item.id}
+                  id={item.id}
+                  title={item.name}
+                  category={item.category}
+                  categoryLabel={categoryLabels[item.category] || item.category}
+                  registrationNumber={item.registration_number || "—"}
+                  price={item.price || 0}
+                  priceFormatted={formatPrice(item.price)}
+                  status={item.status === "published" ? "verified" : "pending"}
+                  views={item.views_count || 0}
+                  description={item.description || ""}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && filteredListings.length === 0 && (
             <div className="text-center py-16">
               <p className="text-muted-foreground mb-4">
-                По вашему запросу ничего не найдено
+                {listings.length === 0 
+                  ? "Пока нет опубликованных объектов. Станьте первым продавцом!"
+                  : "По вашему запросу ничего не найдено"
+                }
               </p>
-              <Button variant="outline" onClick={() => {
-                setSearchQuery("");
-                setSearchParams(new URLSearchParams());
-              }}>
-                Сбросить фильтры
-              </Button>
+              {listings.length === 0 ? (
+                <Button asChild>
+                  <a href="/sell">Разместить объект</a>
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={() => {
+                  setSearchQuery("");
+                  setSearchParams(new URLSearchParams());
+                }}>
+                  Сбросить фильтры
+                </Button>
+              )}
             </div>
           )}
         </div>

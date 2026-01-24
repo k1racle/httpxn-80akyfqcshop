@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,78 +13,75 @@ import {
   Eye,
   Share2,
   Heart,
-  ShoppingCart
+  ShoppingCart,
+  Loader2
 } from "lucide-react";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useCart } from "@/hooks/useCart";
 import { useOrders } from "@/hooks/useOrders";
 import { useAuth } from "@/hooks/useAuth";
+import { useListings, Listing } from "@/hooks/useListings";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-// Mock data - in real app would fetch from API
-const itemData: Record<string, {
-  id: string;
-  title: string;
-  category: string;
-  registrationNumber: string;
-  price: string;
-  priceNumber: number;
-  status: string;
-  views: number;
-  description: string;
-  fullDescription: string;
-  validUntil: string;
-  owner: string;
-  documents: string[];
-}> = {
-  "1": {
-    id: "1",
-    title: "Товарный знак «ЭкоТех»",
-    category: "Товарные знаки",
-    registrationNumber: "№ 845672",
-    price: "450 000 ₽",
-    priceNumber: 450000,
-    status: "verified",
-    views: 234,
-    description: "Зарегистрированный товарный знак для экологически чистых технологий",
-    fullDescription: "Зарегистрированный товарный знак «ЭкоТех» в Роспатенте. Охватывает классы МКТУ: 7, 9, 11, 35, 42. Товарный знак активно использовался в течение 5 лет для продвижения экологически чистых технологий и оборудования. Идеально подходит для компаний, работающих в сфере «зелёных» технологий, возобновляемой энергетики или экологического консалтинга.",
-    validUntil: "15 марта 2034",
-    owner: "ООО «ЭкоИнновации»",
-    documents: ["Свидетельство о регистрации", "Выписка из реестра ФИПС", "Справка об отсутствии обременений"],
-  },
-  "2": {
-    id: "2",
-    title: "Патент на способ очистки воды",
-    category: "Патенты",
-    registrationNumber: "RU 2756891",
-    price: "1 200 000 ₽",
-    priceNumber: 1200000,
-    status: "verified",
-    views: 189,
-    description: "Инновационный метод очистки промышленных стоков",
-    fullDescription: "Патент на изобретение «Способ очистки промышленных сточных вод с применением модифицированных углеродных наноматериалов». Технология позволяет снизить затраты на очистку на 40% при повышении эффективности до 99.7%. Патент действует на территории РФ. Возможна подача заявки по процедуре PCT для международной защиты.",
-    validUntil: "22 июля 2040",
-    owner: "АО «НаноТехВода»",
-    documents: ["Патентная грамота", "Формула изобретения", "Описание технологии", "Отчёт о патентной чистоте"],
-  },
+const categoryLabels: Record<string, string> = {
+  trademarks: "Товарные знаки",
+  patents: "Патенты",
+  software: "Программы и код",
+  copyrights: "Авторские права",
+  industrial: "Промышленные образцы",
+  commercial: "Коммерческие обозначения",
+  databases: "Базы данных",
+  knowhow: "Ноу-хау",
+  specifications: "ТУ и техдокументация",
+  educational: "Образовательные материалы",
+  prototypes: "Прототипы и НИОКР",
+};
+
+const formatPrice = (price: number | null): string => {
+  if (price === null) return "Договорная";
+  return new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency: "RUB",
+    maximumFractionDigits: 0,
+  }).format(price);
 };
 
 const ItemDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const item = id ? itemData[id] : null;
   const { user } = useAuth();
   const { toast } = useToast();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { isInCart, toggleCart } = useCart();
   const { createOrder } = useOrders();
+  const { getListingById, trackView } = useListings();
+
+  const [item, setItem] = useState<Listing | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadItem = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+
+      const listing = await getListingById(id);
+      setItem(listing);
+      setLoading(false);
+
+      // Track view
+      if (listing) {
+        trackView(id, user?.id);
+      }
+    };
+
+    loadItem();
+  }, [id, user?.id]);
 
   const isFav = id ? isFavorite(id) : false;
   const inCart = id ? isInCart(id) : false;
-
-  // Check if it's a mock ID (simple numeric string like "1", "2", etc.)
-  const isMockId = id ? /^\d+$/.test(id) : false;
 
   const handleBuyNow = async () => {
     if (!user) {
@@ -93,24 +91,15 @@ const ItemDetail = () => {
     
     if (!item || !id) return;
 
-    // For mock IDs, show a demo message instead of creating an order
-    if (isMockId) {
-      toast({
-        title: "Демо-режим",
-        description: "Заявка на покупку доступна только для реальных объектов. Разместите свой объект через раздел 'Продать'.",
-      });
-      return;
-    }
-
     const order = await createOrder(
       id,
       {
-        name: item.title,
+        name: item.name,
         category: item.category,
-        price: item.priceNumber,
-        registration_number: item.registrationNumber,
+        price: item.price || 0,
+        registration_number: item.registration_number || undefined,
       },
-      item.priceNumber
+      item.price || 0
     );
 
     if (order) {
@@ -118,11 +107,24 @@ const ItemDetail = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container-wide section-padding flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
   if (!item) {
     return (
       <Layout>
         <div className="container-wide section-padding text-center">
           <h1 className="text-2xl font-bold mb-4">Объект не найден</h1>
+          <p className="text-muted-foreground mb-6">
+            Возможно, объект был удалён или ещё не опубликован
+          </p>
           <Button asChild>
             <Link to="/catalog">Вернуться в каталог</Link>
           </Button>
@@ -130,6 +132,9 @@ const ItemDetail = () => {
       </Layout>
     );
   }
+
+  const categoryLabel = categoryLabels[item.category] || item.category;
+  const isVerified = item.status === "published";
 
   return (
     <Layout>
@@ -152,13 +157,15 @@ const ItemDetail = () => {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="badge-category">
-                      {item.category}
+                      {categoryLabel}
                     </Badge>
-                    {item.status === "verified" && (
+                    {isVerified ? (
                       <Badge className="badge-verified">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Проверен
                       </Badge>
+                    ) : (
+                      <Badge variant="outline">На проверке</Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -176,22 +183,24 @@ const ItemDetail = () => {
                   </div>
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl font-bold mb-2">{item.title}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2">{item.name}</h1>
                 
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Eye className="h-4 w-4" />
-                    {item.views} просмотров
+                    {item.views_count || 0} просмотров
                   </span>
-                  <span>Рег. номер: {item.registrationNumber}</span>
+                  {item.registration_number && (
+                    <span>Рег. номер: {item.registration_number}</span>
+                  )}
                 </div>
               </div>
 
               {/* Description */}
               <div className="card-elevated p-6">
                 <h2 className="text-lg font-semibold mb-4">Описание</h2>
-                <p className="text-muted-foreground leading-relaxed">
-                  {item.fullDescription}
+                <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  {item.description || "Описание не указано"}
                 </p>
               </div>
 
@@ -202,33 +211,37 @@ const ItemDetail = () => {
                   <div className="flex items-start gap-3 p-4 rounded-lg bg-surface-subtle">
                     <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium">Действует до</p>
-                      <p className="text-sm text-muted-foreground">{item.validUntil}</p>
+                      <p className="text-sm font-medium">Дата публикации</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(item.created_at).toLocaleDateString("ru-RU")}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-4 rounded-lg bg-surface-subtle">
                     <Building className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium">Правообладатель</p>
-                      <p className="text-sm text-muted-foreground">{item.owner}</p>
+                      <p className="text-sm font-medium">Категория</p>
+                      <p className="text-sm text-muted-foreground">{categoryLabel}</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Documents */}
-              <div className="card-elevated p-6">
-                <h2 className="text-lg font-semibold mb-4">Документация</h2>
-                <ul className="space-y-2">
-                  {item.documents.map((doc, index) => (
-                    <li key={index} className="flex items-center gap-3 p-3 rounded-lg bg-surface-subtle">
-                      <FileText className="h-4 w-4 text-primary" />
-                      <span className="text-sm">{doc}</span>
-                      <Badge variant="outline" className="ml-auto text-xs">Доступен</Badge>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {item.documents && item.documents.length > 0 && (
+                <div className="card-elevated p-6">
+                  <h2 className="text-lg font-semibold mb-4">Документация</h2>
+                  <ul className="space-y-2">
+                    {item.documents.map((doc, index) => (
+                      <li key={index} className="flex items-center gap-3 p-3 rounded-lg bg-surface-subtle">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <span className="text-sm truncate flex-1">{doc.split('/').pop()}</span>
+                        <Badge variant="outline" className="text-xs">Доступен</Badge>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Sidebar */}
@@ -237,7 +250,10 @@ const ItemDetail = () => {
               <div className="card-elevated p-6 sticky top-24">
                 <div className="mb-6">
                   <p className="text-sm text-muted-foreground mb-1">Цена</p>
-                  <p className="text-3xl font-bold text-primary">{item.price}</p>
+                  <p className="text-3xl font-bold text-primary">{formatPrice(item.price)}</p>
+                  {item.price_negotiable && (
+                    <p className="text-sm text-muted-foreground mt-1">Возможен торг</p>
+                  )}
                 </div>
 
                 <div className="space-y-3">
