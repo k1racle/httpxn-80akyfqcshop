@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -12,11 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Shield, Upload, CheckCircle, FileText, AlertCircle, X, File } from "lucide-react";
+import { Shield, CheckCircle, FileText, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import AiDescriptionHelper from "@/components/sell/AiDescriptionHelper";
+import DocumentUploadSection, { DocumentFile } from "@/components/sell/DocumentUploadSection";
 
 const categories = [
   { id: "trademarks", label: "Товарный знак" },
@@ -33,101 +34,33 @@ const categories = [
   { id: "prototypes", label: "Прототипы и R&D разработки" },
 ];
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-
 const Sell = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
+  const [documentFiles, setDocumentFiles] = useState<DocumentFile[]>([]);
   const [category, setCategory] = useState("");
   const [title, setTitle] = useState("");
   const [regNumber, setRegNumber] = useState("");
   const [description, setDescription] = useState("");
-  const [isDragging, setIsDragging] = useState(false);
-
-  const validateFile = (file: File): string | null => {
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return `Неподдерживаемый формат: ${file.name}`;
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      return `Файл слишком большой: ${file.name} (макс. 10 МБ)`;
-    }
-    return null;
-  };
-
-  const handleFiles = (newFiles: FileList | null) => {
-    if (!newFiles || newFiles.length === 0) return;
-    
-    const validFiles: File[] = [];
-    const errors: string[] = [];
-    
-    Array.from(newFiles).forEach(file => {
-      const error = validateFile(file);
-      if (error) {
-        errors.push(error);
-      } else if (!files.some(f => f.name === file.name)) {
-        validFiles.push(file);
-      }
-    });
-    
-    if (errors.length > 0) {
-      toast({
-        title: "Ошибка загрузки",
-        description: errors.join(", "),
-        variant: "destructive",
-      });
-    }
-    
-    if (validFiles.length > 0) {
-      setFiles(prev => [...prev, ...validFiles]);
-    }
-    
-    // Reset input to allow selecting the same file again
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const removeFile = (fileName: string) => {
-    setFiles(prev => prev.filter(f => f.name !== fileName));
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    handleFiles(e.dataTransfer.files);
-  };
 
   const uploadFiles = async (): Promise<string[]> => {
-    if (!user || files.length === 0) return [];
+    if (!user || documentFiles.length === 0) return [];
     
     const uploadedPaths: string[] = [];
     
-    for (const file of files) {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    for (const docFile of documentFiles) {
+      const fileExt = docFile.file.name.split('.').pop();
+      const fileName = `${user.id}/${docFile.type}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       
       const { error } = await supabase.storage
         .from('ip-documents')
-        .upload(fileName, file);
+        .upload(fileName, docFile.file);
       
       if (error) {
-        throw new Error(`Ошибка загрузки файла: ${file.name}`);
+        throw new Error(`Ошибка загрузки файла: ${docFile.file.name}`);
       }
       
       uploadedPaths.push(fileName);
@@ -148,6 +81,17 @@ const Sell = () => {
       navigate("/auth");
       return;
     }
+
+    // Check for required image
+    const hasImage = documentFiles.some(f => f.type === 'image');
+    if (!hasImage) {
+      toast({
+        title: "Требуется изображение",
+        description: "Загрузите изображение объекта интеллектуальной собственности",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsSubmitting(true);
     
@@ -156,7 +100,6 @@ const Sell = () => {
       const uploadedPaths = await uploadFiles();
       
       // Here you would save the form data to database
-      // For now, just show success message
       console.log("Uploaded files:", uploadedPaths);
       
       toast({
@@ -165,7 +108,7 @@ const Sell = () => {
       });
       
       // Reset form
-      setFiles([]);
+      setDocumentFiles([]);
       setCategory("");
       setTitle("");
       setRegNumber("");
@@ -180,12 +123,6 @@ const Sell = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' Б';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
   };
 
   return (
@@ -287,69 +224,12 @@ const Sell = () => {
                   </p>
                 </div>
 
-                {/* Documents Upload */}
-                <div className="space-y-2">
-                  <Label htmlFor="file-upload">Документы</Label>
-                  <label
-                    htmlFor="file-upload"
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    className={`block border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
-                      isDragging 
-                        ? "border-primary bg-primary/5" 
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <input
-                      id="file-upload"
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      accept=".pdf,.jpg,.jpeg,.png,.webp"
-                      onChange={(e) => handleFiles(e.target.files)}
-                      className="sr-only"
-                    />
-                    <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Перетащите файлы или нажмите для загрузки
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      PDF, JPG, PNG до 10 МБ
-                    </p>
-                  </label>
-                  
-                  {/* File list */}
-                  {files.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      {files.map((file) => (
-                        <div 
-                          key={file.name} 
-                          className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            <File className="h-5 w-5 text-primary" />
-                            <div>
-                              <p className="text-sm font-medium truncate max-w-[200px]">
-                                {file.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatFileSize(file.size)}
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeFile(file.name)}
-                            className="p-1 hover:bg-background rounded-md transition-colors"
-                          >
-                            <X className="h-4 w-4 text-muted-foreground" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                {/* Documents Upload - Step by Step */}
+                <DocumentUploadSection
+                  files={documentFiles}
+                  onFilesChange={setDocumentFiles}
+                  category={category}
+                />
 
                 {/* Contact Info */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -449,26 +329,45 @@ const Sell = () => {
                 </ul>
               </div>
 
-              {/* Requirements */}
+              {/* Document Status Info */}
               <div className="card-elevated p-6">
                 <h3 className="font-semibold mb-4 flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
-                  Необходимые документы
+                  Статус документов
                 </h3>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                    Свидетельство о регистрации
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-primary" />
+                      Изображение ИС
+                    </span>
+                    <span className="text-xs text-destructive font-medium">Обязательно</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                    Выписка из реестра
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                      Свидетельство
+                    </span>
+                    <span className="text-xs text-muted-foreground">Опционально</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                    Подтверждение полномочий
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                      Выписка из реестра
+                    </span>
+                    <span className="text-xs text-muted-foreground">Опционально</span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                      Полномочия
+                    </span>
+                    <span className="text-xs text-muted-foreground">Опционально</span>
                   </li>
                 </ul>
+                <p className="text-xs text-muted-foreground mt-4 pt-4 border-t">
+                  После загрузки изображения вы можете отправить заявку. Остальные документы можно добавить позже.
+                </p>
               </div>
 
               {/* Note */}
