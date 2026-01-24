@@ -248,7 +248,7 @@ const SubmissionEditDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl w-[95vw]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Редактирование карточки
@@ -275,6 +275,7 @@ const SubmissionEditDialog = ({
               onChange={(e) => setName(e.target.value)}
               disabled={!canEdit || saving}
               placeholder="Название товарного знака"
+              className="w-full"
             />
           </div>
 
@@ -286,7 +287,8 @@ const SubmissionEditDialog = ({
               onChange={(e) => setDescription(e.target.value)}
               disabled={!canEdit || saving}
               placeholder="Подробное описание объекта ИС..."
-              rows={4}
+              rows={3}
+              className="w-full resize-none"
             />
           </div>
 
@@ -299,6 +301,7 @@ const SubmissionEditDialog = ({
               onChange={(e) => setPrice(e.target.value)}
               disabled={!canEdit || saving}
               placeholder="500000"
+              className="w-full"
             />
           </div>
 
