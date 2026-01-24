@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Save, Trash2, PauseCircle, History, Clock } from "lucide-react";
+import { Loader2, Save, Trash2, PauseCircle, Clock, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,8 @@ interface SubmissionEditDialogProps {
     status: string;
     user_id: string;
     hold_expires_at?: string | null;
+    category?: string;
+    registration_number?: string | null;
   };
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,6 +57,7 @@ const SubmissionEditDialog = ({
   const [saving, setSaving] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [holdingAction, setHoldingAction] = useState(false);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
   const canEdit = !["published", "sold", "cancelled"].includes(submission.status);
   const isOnHold = submission.status === "on_hold";
@@ -69,6 +72,50 @@ const SubmissionEditDialog = ({
       });
     } catch (error) {
       console.error("Failed to log history:", error);
+    }
+  };
+
+  const handleGenerateAi = async () => {
+    if (!name) {
+      toast({
+        title: "Укажите название",
+        description: "Введите название для генерации описания",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingAi(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-description", {
+        body: {
+          category: submission.category || "trademark",
+          title: name,
+          registrationNumber: submission.registration_number || "",
+          currentDescription: description,
+        },
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.description) {
+        setDescription(data.description);
+        toast({
+          title: "Описание сгенерировано",
+          description: description ? "Описание улучшено с помощью AI" : "Используйте сгенерированный текст как основу",
+        });
+      }
+    } catch (error: any) {
+      console.error("AI generation error:", error);
+      toast({
+        title: "Ошибка генерации",
+        description: error.message || "Не удалось сгенерировать описание",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingAi(false);
     }
   };
 
@@ -280,15 +327,39 @@ const SubmissionEditDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-description">Описание</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="edit-description">Описание</Label>
+              {canEdit && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateAi}
+                  disabled={isGeneratingAi || saving}
+                  className="gap-2 h-7 text-xs"
+                >
+                  {isGeneratingAi ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Генерация...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3 w-3" />
+                      {description ? "Улучшить с AI" : "Сгенерировать с AI"}
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
             <Textarea
               id="edit-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={!canEdit || saving}
               placeholder="Подробное описание объекта ИС..."
-              rows={3}
-              className="w-full resize-none"
+              rows={8}
+              className="w-full resize-y min-h-[150px]"
             />
           </div>
 
