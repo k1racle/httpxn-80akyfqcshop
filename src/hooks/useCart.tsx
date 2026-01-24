@@ -58,6 +58,16 @@ export const useCart = () => {
       return false;
     }
 
+    // Check if it's a mock ID (simple numeric string like "1", "2", etc.)
+    const isMockId = /^\d+$/.test(listingId);
+    if (isMockId) {
+      toast({
+        title: "Демо-режим",
+        description: "Эта функция доступна только для реальных объектов",
+      });
+      return false;
+    }
+
     const isCurrentlyInCart = isInCart(listingId);
 
     try {
