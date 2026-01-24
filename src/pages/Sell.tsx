@@ -45,6 +45,10 @@ const Sell = () => {
   const [title, setTitle] = useState("");
   const [regNumber, setRegNumber] = useState("");
   const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
 
   const uploadFiles = async (): Promise<string[]> => {
     if (!user || documentFiles.length === 0) return [];
@@ -96,11 +100,29 @@ const Sell = () => {
     setIsSubmitting(true);
     
     try {
-      // Upload files
+      // Upload files to storage
       const uploadedPaths = await uploadFiles();
       
-      // Here you would save the form data to database
-      console.log("Uploaded files:", uploadedPaths);
+      // Save submission to database
+      const { error: submissionError } = await supabase
+        .from('ip_submissions')
+        .insert({
+          user_id: user.id,
+          category,
+          name: title,
+          registration_number: regNumber || null,
+          description,
+          price: price ? parseFloat(price) : null,
+          documents: uploadedPaths,
+          contact_name: contactName,
+          contact_email: contactEmail,
+          contact_phone: contactPhone || null,
+          status: 'pending',
+        });
+      
+      if (submissionError) {
+        throw new Error(submissionError.message);
+      }
       
       toast({
         title: "Заявка отправлена",
@@ -113,7 +135,10 @@ const Sell = () => {
       setTitle("");
       setRegNumber("");
       setDescription("");
-      (e.target as HTMLFormElement).reset();
+      setPrice("");
+      setContactName("");
+      setContactEmail("");
+      setContactPhone("");
     } catch (error: any) {
       toast({
         title: "Ошибка",
@@ -217,6 +242,8 @@ const Sell = () => {
                     id="price"
                     type="number"
                     placeholder="500000"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
                     required
                   />
                   <p className="text-xs text-muted-foreground">
@@ -234,8 +261,14 @@ const Sell = () => {
                 {/* Contact Info */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Ваше имя *</Label>
-                    <Input id="name" placeholder="Иван Петров" required />
+                    <Label htmlFor="contactName">Ваше имя *</Label>
+                    <Input 
+                      id="contactName" 
+                      placeholder="Иван Петров" 
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                      required 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="company">Организация</Label>
@@ -246,11 +279,24 @@ const Sell = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email *</Label>
-                    <Input id="email" type="email" placeholder="email@example.com" required />
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="email@example.com" 
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      required 
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Телефон *</Label>
-                    <Input id="phone" type="tel" placeholder="+7 (900) 123-45-67" required />
+                    <Label htmlFor="phone">Телефон</Label>
+                    <Input 
+                      id="phone" 
+                      type="tel" 
+                      placeholder="+7 (900) 123-45-67" 
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                    />
                   </div>
                 </div>
 
