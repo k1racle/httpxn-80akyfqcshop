@@ -27,7 +27,10 @@ import {
   X,
   ExternalLink,
   Loader2,
+  Pencil,
+  PauseCircle,
 } from "lucide-react";
+import SubmissionEditDialog from "./SubmissionEditDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -42,6 +45,8 @@ interface SubmissionCardProps {
     documents: string[] | null;
     admin_notes: string | null;
     user_id: string;
+    description?: string | null;
+    hold_expires_at?: string | null;
   };
   onUpdate: () => void;
 }
@@ -127,6 +132,10 @@ const getSubmissionStatusLabel = (status: string) => {
       return "Опубликована";
     case "sold":
       return "Продана";
+    case "on_hold":
+      return "На удержании";
+    case "cancelled":
+      return "Отменена";
     default:
       return status;
   }
@@ -141,8 +150,10 @@ const getSubmissionStatusVariant = (
       return "default";
     case "reviewing":
     case "sold":
+    case "on_hold":
       return "secondary";
     case "rejected":
+    case "cancelled":
       return "destructive";
     default:
       return "outline";
@@ -152,10 +163,14 @@ const getSubmissionStatusVariant = (
 const SubmissionCard = ({ submission, onUpdate }: SubmissionCardProps) => {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [uploading, setUploading] = useState<DocumentType | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const isOnHold = submission.status === "on_hold";
+  const isCancelled = submission.status === "cancelled";
 
   // Parse documents to determine which types are uploaded
   const getDocumentsByType = () => {
@@ -412,15 +427,43 @@ const SubmissionCard = ({ submission, onUpdate }: SubmissionCardProps) => {
           </div>
 
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-            <p className="text-sm text-muted-foreground">
-              Документов: {submission.documents?.length || 0} / 4
-            </p>
-            <p className="font-semibold text-primary">
-              {formatPrice(submission.price)}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground">
+                Документов: {submission.documents?.length || 0} / 4
+              </p>
+              {isOnHold && (
+                <Badge variant="secondary" className="gap-1 text-xs">
+                  <PauseCircle className="h-3 w-3" />
+                  24ч
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <p className="font-semibold text-primary">
+                {formatPrice(submission.price)}
+              </p>
+              {!isCancelled && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditDialogOpen(true)}
+                >
+                  <Pencil className="h-3 w-3 mr-1" />
+                  Редактировать
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Edit Dialog */}
+      <SubmissionEditDialog
+        submission={submission}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onUpdate={onUpdate}
+      />
     </div>
   );
 };
