@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +11,14 @@ import {
   Building,
   Eye,
   Share2,
-  Heart
+  Heart,
+  ShoppingCart
 } from "lucide-react";
+import { useFavorites } from "@/hooks/useFavorites";
+import { useCart } from "@/hooks/useCart";
+import { useOrders } from "@/hooks/useOrders";
+import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 
 // Mock data - in real app would fetch from API
 const itemData: Record<string, {
@@ -21,6 +27,7 @@ const itemData: Record<string, {
   category: string;
   registrationNumber: string;
   price: string;
+  priceNumber: number;
   status: string;
   views: number;
   description: string;
@@ -35,6 +42,7 @@ const itemData: Record<string, {
     category: "Товарные знаки",
     registrationNumber: "№ 845672",
     price: "450 000 ₽",
+    priceNumber: 450000,
     status: "verified",
     views: 234,
     description: "Зарегистрированный товарный знак для экологически чистых технологий",
@@ -49,6 +57,7 @@ const itemData: Record<string, {
     category: "Патенты",
     registrationNumber: "RU 2756891",
     price: "1 200 000 ₽",
+    priceNumber: 1200000,
     status: "verified",
     views: 189,
     description: "Инновационный метод очистки промышленных стоков",
@@ -61,7 +70,39 @@ const itemData: Record<string, {
 
 const ItemDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const item = id ? itemData[id] : null;
+  const { user } = useAuth();
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { isInCart, toggleCart } = useCart();
+  const { createOrder } = useOrders();
+
+  const isFav = id ? isFavorite(id) : false;
+  const inCart = id ? isInCart(id) : false;
+
+  const handleBuyNow = async () => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    
+    if (!item || !id) return;
+
+    const order = await createOrder(
+      id,
+      {
+        name: item.title,
+        category: item.category,
+        price: item.priceNumber,
+        registration_number: item.registrationNumber,
+      },
+      item.priceNumber
+    );
+
+    if (order) {
+      navigate("/dashboard?tab=orders");
+    }
+  };
 
   if (!item) {
     return (
@@ -107,8 +148,13 @@ const ItemDetail = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon">
-                      <Heart className="h-4 w-4" />
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className={cn(isFav && "text-red-500")}
+                      onClick={() => id && toggleFavorite(id)}
+                    >
+                      <Heart className={cn("h-4 w-4", isFav && "fill-current")} />
                     </Button>
                     <Button variant="ghost" size="icon">
                       <Share2 className="h-4 w-4" />
@@ -181,11 +227,22 @@ const ItemDetail = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <Button variant="hero" size="lg" className="w-full">
-                    Оставить заявку
+                  <Button 
+                    variant="hero" 
+                    size="lg" 
+                    className="w-full"
+                    onClick={handleBuyNow}
+                  >
+                    Оставить заявку на покупку
                   </Button>
-                  <Button variant="outline" size="lg" className="w-full">
-                    Связаться с продавцом
+                  <Button 
+                    variant={inCart ? "default" : "outline"} 
+                    size="lg" 
+                    className="w-full gap-2"
+                    onClick={() => id && toggleCart(id)}
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    {inCart ? "В корзине" : "Добавить в корзину"}
                   </Button>
                 </div>
 

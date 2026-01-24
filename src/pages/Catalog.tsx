@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { 
   Select,
   SelectContent,
@@ -11,7 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, CheckCircle, Eye, SlidersHorizontal } from "lucide-react";
+import { Search, Filter, SlidersHorizontal } from "lucide-react";
+import ListingCard from "@/components/catalog/ListingCard";
 
 const categories = [
   { id: "all", label: "Все категории" },
@@ -164,51 +164,19 @@ const Catalog = () => {
           {/* Listings Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredListings.map((item) => (
-              <Link
+              <ListingCard
                 key={item.id}
-                to={`/catalog/${item.id}`}
-                className="group card-elevated p-6 flex flex-col"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <Badge variant="secondary" className="badge-category">
-                    {item.categoryLabel}
-                  </Badge>
-                  {item.status === "verified" ? (
-                    <Badge className="badge-verified">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Проверен
-                    </Badge>
-                  ) : (
-                    <Badge className="badge-pending">
-                      На проверке
-                    </Badge>
-                  )}
-                </div>
-
-                <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
-                  {item.title}
-                </h3>
-                
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-2 flex-1">
-                  {item.description}
-                </p>
-
-                <div className="flex items-center justify-between pt-4 border-t border-border">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Рег. номер</p>
-                    <p className="text-sm font-medium">{item.registrationNumber}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground mb-1">Цена</p>
-                    <p className="text-lg font-bold text-primary">{item.priceFormatted}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 mt-4 text-xs text-muted-foreground">
-                  <Eye className="h-3 w-3" />
-                  {item.views} просмотров
-                </div>
-              </Link>
+                id={item.id}
+                title={item.title}
+                category={item.category}
+                categoryLabel={item.categoryLabel}
+                registrationNumber={item.registrationNumber}
+                price={item.price}
+                priceFormatted={item.priceFormatted}
+                status={item.status as "verified" | "pending"}
+                views={item.views}
+                description={item.description}
+              />
             ))}
           </div>
 
