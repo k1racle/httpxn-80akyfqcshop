@@ -57,7 +57,7 @@ const Sell = () => {
   };
 
   const handleFiles = (newFiles: FileList | null) => {
-    if (!newFiles) return;
+    if (!newFiles || newFiles.length === 0) return;
     
     const validFiles: File[] = [];
     const errors: string[] = [];
@@ -81,6 +81,11 @@ const Sell = () => {
     
     if (validFiles.length > 0) {
       setFiles(prev => [...prev, ...validFiles]);
+    }
+    
+    // Reset input to allow selecting the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -259,26 +264,27 @@ const Sell = () => {
 
                 {/* Documents Upload */}
                 <div className="space-y-2">
-                  <Label>Документы</Label>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    onChange={(e) => handleFiles(e.target.files)}
-                    className="hidden"
-                  />
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
+                  <Label htmlFor="file-upload">Документы</Label>
+                  <label
+                    htmlFor="file-upload"
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
+                    className={`block border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
                       isDragging 
                         ? "border-primary bg-primary/5" 
                         : "border-border hover:border-primary/50"
                     }`}
                   >
+                    <input
+                      id="file-upload"
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      onChange={(e) => handleFiles(e.target.files)}
+                      className="sr-only"
+                    />
                     <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
                     <p className="text-sm text-muted-foreground mb-2">
                       Перетащите файлы или нажмите для загрузки
@@ -286,7 +292,7 @@ const Sell = () => {
                     <p className="text-xs text-muted-foreground">
                       PDF, JPG, PNG до 10 МБ
                     </p>
-                  </div>
+                  </label>
                   
                   {/* File list */}
                   {files.length > 0 && (
