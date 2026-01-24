@@ -201,6 +201,8 @@ export type Database = {
           created_at: string
           description: string | null
           documents: string[] | null
+          hold_expires_at: string | null
+          hold_reason: string | null
           id: string
           name: string
           price: number | null
@@ -219,6 +221,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           documents?: string[] | null
+          hold_expires_at?: string | null
+          hold_reason?: string | null
           id?: string
           name: string
           price?: number | null
@@ -237,6 +241,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           documents?: string[] | null
+          hold_expires_at?: string | null
+          hold_reason?: string | null
           id?: string
           name?: string
           price?: number | null
@@ -363,6 +369,95 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          deal_completed: boolean
+          id: string
+          order_id: string | null
+          rating: number
+          reviewer_id: string
+          seller_id: string
+          submission_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          deal_completed?: boolean
+          id?: string
+          order_id?: string | null
+          rating: number
+          reviewer_id: string
+          seller_id: string
+          submission_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          deal_completed?: boolean
+          id?: string
+          order_id?: string | null
+          rating?: number
+          reviewer_id?: string
+          seller_id?: string
+          submission_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_reviews_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "ip_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      submission_history: {
+        Row: {
+          action: string
+          changes: Json | null
+          created_at: string
+          id: string
+          submission_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          submission_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          submission_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submission_history_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "ip_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -415,6 +510,8 @@ export type Database = {
         | "rejected"
         | "published"
         | "sold"
+        | "on_hold"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -560,6 +657,8 @@ export const Constants = {
         "rejected",
         "published",
         "sold",
+        "on_hold",
+        "cancelled",
       ],
     },
   },
