@@ -1,10 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Shield, Menu, X, LogOut, User, Heart, ShoppingCart, LayoutDashboard } from "lucide-react";
+import { Shield, Menu, X, LogOut, User, Heart, ShoppingCart, LayoutDashboard, Settings } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useAdmin } from "@/hooks/useAdmin";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -22,7 +23,7 @@ const Header = () => {
   const { user, signOut } = useAuth();
   const { cartCount } = useCart();
   const { favorites } = useFavorites();
-
+  const { isAdmin } = useAdmin();
 
   const navItems = [
     { href: "/catalog", label: "Каталог" },
@@ -126,6 +127,14 @@ const Header = () => {
                         Личный кабинет
                       </Link>
                     </DropdownMenuItem>
+                    {isAdmin && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin">
+                          <Settings className="mr-2 h-4 w-4" />
+                          Админ-панель
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="mr-2 h-4 w-4" />
