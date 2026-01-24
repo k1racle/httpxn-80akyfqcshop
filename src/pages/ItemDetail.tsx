@@ -18,6 +18,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useCart } from "@/hooks/useCart";
 import { useOrders } from "@/hooks/useOrders";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 // Mock data - in real app would fetch from API
@@ -73,12 +74,16 @@ const ItemDetail = () => {
   const navigate = useNavigate();
   const item = id ? itemData[id] : null;
   const { user } = useAuth();
+  const { toast } = useToast();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { isInCart, toggleCart } = useCart();
   const { createOrder } = useOrders();
 
   const isFav = id ? isFavorite(id) : false;
   const inCart = id ? isInCart(id) : false;
+
+  // Check if it's a mock ID (simple numeric string like "1", "2", etc.)
+  const isMockId = id ? /^\d+$/.test(id) : false;
 
   const handleBuyNow = async () => {
     if (!user) {
@@ -87,6 +92,15 @@ const ItemDetail = () => {
     }
     
     if (!item || !id) return;
+
+    // For mock IDs, show a demo message instead of creating an order
+    if (isMockId) {
+      toast({
+        title: "Демо-режим",
+        description: "Заявка на покупку доступна только для реальных объектов. Разместите свой объект через раздел 'Продать'.",
+      });
+      return;
+    }
 
     const order = await createOrder(
       id,
