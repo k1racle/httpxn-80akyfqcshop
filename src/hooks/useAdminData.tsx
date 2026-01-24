@@ -54,6 +54,7 @@ export interface AdminOrder {
   payment_url: string | null;
   payment_expires_at: string | null;
   admin_notes: string | null;
+  contact_email: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -216,7 +217,7 @@ export const useAdminOrders = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setOrders((data as AdminOrder[]) || []);
+      setOrders((data as unknown as AdminOrder[]) || []);
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -242,12 +243,15 @@ export const useAdminOrders = () => {
         admin_notes?: string;
       } = { status };
 
+      let paymentExpiresAt: string | undefined;
+
       if (paymentUrl) {
         updateData.payment_url = paymentUrl;
         // Set payment expiration to 30 minutes from now
         const expiresAt = new Date();
         expiresAt.setMinutes(expiresAt.getMinutes() + 30);
-        updateData.payment_expires_at = expiresAt.toISOString();
+        paymentExpiresAt = expiresAt.toISOString();
+        updateData.payment_expires_at = paymentExpiresAt;
       }
 
       if (adminNotes !== undefined) {
@@ -260,6 +264,37 @@ export const useAdminOrders = () => {
         .eq("id", id);
 
       if (error) throw error;
+
+      // Find the order to get customer email
+      const order = orders.find((o) => o.id === id);
+      
+      if (order && order.contact_email) {
+        // Get user name from profiles
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", order.user_id)
+          .maybeSingle();
+        
+        try {
+          await supabase.functions.invoke("send-order-notification", {
+            body: {
+              to: order.contact_email,
+              customerName: profile?.full_name || "Клиент",
+              orderName: order.listing_snapshot.name,
+              orderCategory: order.listing_snapshot.category,
+              orderPrice: order.price,
+              status: status,
+              paymentUrl: paymentUrl,
+              paymentExpiresAt: paymentExpiresAt,
+            },
+          });
+          console.log("Email notification sent");
+        } catch (emailError) {
+          console.error("Failed to send email notification:", emailError);
+          // Don't fail the whole operation if email fails
+        }
+      }
 
       setOrders((prev) =>
         prev.map((o) => (o.id === id ? { ...o, ...updateData } : o))

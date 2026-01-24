@@ -52,7 +52,7 @@ export const useOrders = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setOrders((data as Order[]) || []);
+      setOrders((data as unknown as Order[]) || []);
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -87,13 +87,14 @@ export const useOrders = () => {
           listing_snapshot: listingSnapshot,
           price: price,
           status: "pending",
+          contact_email: user.email,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      setOrders((prev) => [data as Order, ...prev]);
+      setOrders((prev) => [data as unknown as Order, ...prev]);
       toast({
         title: "Заявка отправлена",
         description: "Менеджер свяжется с вами в ближайшее время",

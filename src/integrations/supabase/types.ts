@@ -283,6 +283,7 @@ export type Database = {
       orders: {
         Row: {
           admin_notes: string | null
+          contact_email: string | null
           created_at: string
           id: string
           listing_id: string | null
@@ -296,6 +297,7 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          contact_email?: string | null
           created_at?: string
           id?: string
           listing_id?: string | null
@@ -309,6 +311,7 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          contact_email?: string | null
           created_at?: string
           id?: string
           listing_id?: string | null
