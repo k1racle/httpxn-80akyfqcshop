@@ -23,6 +23,7 @@ import { useMyListings, Listing } from "@/hooks/useListings";
 import { useMySubmissions } from "@/hooks/useSubmissions";
 import { useOrders, getStatusLabel, getStatusColor, Order } from "@/hooks/useOrders";
 import { supabase } from "@/integrations/supabase/client";
+import SubmissionCard from "@/components/dashboard/SubmissionCard";
 
 const formatPrice = (price: number | null) => {
   if (!price) return "Договорная";
@@ -31,50 +32,6 @@ const formatPrice = (price: number | null) => {
     currency: "RUB",
     maximumFractionDigits: 0,
   }).format(price);
-};
-
-const formatDateShort = (dateStr: string) =>
-  new Date(dateStr).toLocaleDateString("ru-RU", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-
-const getSubmissionStatusLabel = (status: string) => {
-  switch (status) {
-    case "pending":
-      return "Ожидает";
-    case "reviewing":
-      return "На проверке";
-    case "approved":
-      return "Одобрена";
-    case "rejected":
-      return "Отклонена";
-    case "published":
-      return "Опубликована";
-    case "sold":
-      return "Продана";
-    default:
-      return status;
-  }
-};
-
-const getSubmissionStatusVariant = (
-  status: string
-): "default" | "secondary" | "destructive" | "outline" => {
-  switch (status) {
-    case "approved":
-    case "published":
-      return "default";
-    case "reviewing":
-    case "sold":
-      return "secondary";
-    case "rejected":
-      return "destructive";
-    case "pending":
-    default:
-      return "outline";
-  }
 };
 
 interface FavoriteWithListing {
@@ -94,7 +51,7 @@ const Dashboard = () => {
   const { favorites, toggleFavorite } = useFavorites();
   const { cartItems, toggleCart } = useCart();
   const { listings: myListings, loading: listingsLoading } = useMyListings();
-  const { submissions: mySubmissions, loading: submissionsLoading } = useMySubmissions();
+  const { submissions: mySubmissions, loading: submissionsLoading, refetch: refetchSubmissions } = useMySubmissions();
   const { orders, loading: ordersLoading } = useOrders();
   const [searchParams] = useSearchParams();
 
@@ -479,36 +436,11 @@ const Dashboard = () => {
                       ) : (
                         <div className="space-y-4">
                           {mySubmissions.map((submission) => (
-                            <div
+                            <SubmissionCard
                               key={submission.id}
-                              className="p-4 rounded-lg border border-border"
-                            >
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="min-w-0">
-                                  <h4 className="font-medium truncate">{submission.name}</h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    {submission.category} • {formatDateShort(submission.created_at)}
-                                  </p>
-                                  {submission.admin_notes && (
-                                    <p className="text-sm text-muted-foreground mt-2">
-                                      {submission.admin_notes}
-                                    </p>
-                                  )}
-                                </div>
-                                <Badge variant={getSubmissionStatusVariant(submission.status)}>
-                                  {getSubmissionStatusLabel(submission.status)}
-                                </Badge>
-                              </div>
-
-                              <div className="flex items-center justify-between mt-4">
-                                <p className="text-sm text-muted-foreground">
-                                  Документов: {submission.documents?.length || 0}
-                                </p>
-                                <p className="font-semibold text-primary">
-                                  {formatPrice(submission.price)}
-                                </p>
-                              </div>
-                            </div>
+                              submission={submission}
+                              onUpdate={refetchSubmissions}
+                            />
                           ))}
                         </div>
                       )}
