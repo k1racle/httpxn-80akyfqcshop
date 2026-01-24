@@ -152,13 +152,23 @@ const Dashboard = () => {
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="my-listings" className="gap-2">
+              <TabsTrigger value="my-purchases" className="gap-2">
                 <Package className="h-4 w-4" />
                 <span className="hidden sm:inline">Мои объекты</span>
+                {orders.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {orders.length}
+                  </Badge>
+                )}
               </TabsTrigger>
-              <TabsTrigger value="orders" className="gap-2">
+              <TabsTrigger value="my-sales" className="gap-2">
                 <ClipboardList className="h-4 w-4" />
-                <span className="hidden sm:inline">Заказы</span>
+                <span className="hidden sm:inline">Продажа</span>
+                {myListings.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {myListings.length}
+                  </Badge>
+                )}
               </TabsTrigger>
             </TabsList>
 
@@ -303,11 +313,85 @@ const Dashboard = () => {
               </div>
             </TabsContent>
 
-            {/* My Listings Tab */}
-            <TabsContent value="my-listings">
+            {/* My Purchases Tab (what user bought) */}
+            <TabsContent value="my-purchases">
+              <div className="card-elevated p-6">
+                <h2 className="text-xl font-semibold mb-6">Мои объекты</h2>
+                {ordersLoading ? (
+                  <div className="animate-pulse space-y-4">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="h-24 bg-muted rounded" />
+                    ))}
+                  </div>
+                ) : orders.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-4">
+                      У вас пока нет приобретённых объектов
+                    </p>
+                    <Button asChild>
+                      <Link to="/catalog">Перейти в каталог</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.map((order) => (
+                      <div
+                        key={order.id}
+                        className="p-4 rounded-lg border border-border"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="font-medium">
+                              {order.listing_snapshot.name}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {order.listing_snapshot.category}
+                            </p>
+                          </div>
+                          <Badge className={getStatusColor(order.status)}>
+                            {getStatusLabel(order.status)}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between mt-4">
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(order.created_at).toLocaleDateString(
+                              "ru-RU"
+                            )}
+                          </p>
+                          <p className="font-semibold text-primary">
+                            {formatPrice(order.price)}
+                          </p>
+                        </div>
+                        {order.status === "payment_ready" &&
+                          order.payment_url && (
+                            <Button
+                              variant="hero"
+                              size="sm"
+                              className="w-full mt-4"
+                              asChild
+                            >
+                              <a
+                                href={order.payment_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Оплатить
+                              </a>
+                            </Button>
+                          )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* My Sales Tab (what user is selling) */}
+            <TabsContent value="my-sales">
               <div className="card-elevated p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold">Мои объекты ИС</h2>
+                  <h2 className="text-xl font-semibold">Мои продажи</h2>
                   <Button asChild>
                     <Link to="/sell">Разместить объект</Link>
                   </Button>
@@ -320,9 +404,9 @@ const Dashboard = () => {
                   </div>
                 ) : myListings.length === 0 ? (
                   <div className="text-center py-12">
-                    <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <ClipboardList className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground mb-4">
-                      У вас пока нет размещённых объектов
+                      У вас пока нет объектов на продажу
                     </p>
                     <Button asChild>
                       <Link to="/sell">Разместить первый объект</Link>
@@ -344,16 +428,20 @@ const Dashboard = () => {
                           </div>
                           <Badge
                             variant={
-                              listing.status === "active"
+                              listing.status === "published"
                                 ? "default"
-                                : "secondary"
+                                : listing.status === "sold"
+                                ? "secondary"
+                                : "outline"
                             }
                           >
-                            {listing.status === "active"
-                              ? "Активен"
+                            {listing.status === "published"
+                              ? "Опубликован"
                               : listing.status === "sold"
                               ? "Продан"
-                              : "В архиве"}
+                              : listing.status === "active"
+                              ? "Активен"
+                              : "На модерации"}
                           </Badge>
                         </div>
 
@@ -416,80 +504,6 @@ const Dashboard = () => {
                             Аналитика
                           </Button>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            {/* Orders Tab */}
-            <TabsContent value="orders">
-              <div className="card-elevated p-6">
-                <h2 className="text-xl font-semibold mb-6">Мои заказы</h2>
-                {ordersLoading ? (
-                  <div className="animate-pulse space-y-4">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="h-24 bg-muted rounded" />
-                    ))}
-                  </div>
-                ) : orders.length === 0 ? (
-                  <div className="text-center py-12">
-                    <ClipboardList className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground mb-4">
-                      У вас пока нет заказов
-                    </p>
-                    <Button asChild>
-                      <Link to="/catalog">Перейти в каталог</Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {orders.map((order) => (
-                      <div
-                        key={order.id}
-                        className="p-4 rounded-lg border border-border"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="font-medium">
-                              {order.listing_snapshot.name}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {order.listing_snapshot.category}
-                            </p>
-                          </div>
-                          <Badge className={getStatusColor(order.status)}>
-                            {getStatusLabel(order.status)}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between mt-4">
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(order.created_at).toLocaleDateString(
-                              "ru-RU"
-                            )}
-                          </p>
-                          <p className="font-semibold text-primary">
-                            {formatPrice(order.price)}
-                          </p>
-                        </div>
-                        {order.status === "payment_ready" &&
-                          order.payment_url && (
-                            <Button
-                              variant="hero"
-                              size="sm"
-                              className="w-full mt-4"
-                              asChild
-                            >
-                              <a
-                                href={order.payment_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                Оплатить
-                              </a>
-                            </Button>
-                          )}
                       </div>
                     ))}
                   </div>
