@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useCart } from "@/hooks/useCart";
 import { useMyListings, Listing } from "@/hooks/useListings";
+import { useMySubmissions } from "@/hooks/useSubmissions";
 import { useOrders, getStatusLabel, getStatusColor, Order } from "@/hooks/useOrders";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -30,6 +31,50 @@ const formatPrice = (price: number | null) => {
     currency: "RUB",
     maximumFractionDigits: 0,
   }).format(price);
+};
+
+const formatDateShort = (dateStr: string) =>
+  new Date(dateStr).toLocaleDateString("ru-RU", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+const getSubmissionStatusLabel = (status: string) => {
+  switch (status) {
+    case "pending":
+      return "Ожидает";
+    case "reviewing":
+      return "На проверке";
+    case "approved":
+      return "Одобрена";
+    case "rejected":
+      return "Отклонена";
+    case "published":
+      return "Опубликована";
+    case "sold":
+      return "Продана";
+    default:
+      return status;
+  }
+};
+
+const getSubmissionStatusVariant = (
+  status: string
+): "default" | "secondary" | "destructive" | "outline" => {
+  switch (status) {
+    case "approved":
+    case "published":
+      return "default";
+    case "reviewing":
+    case "sold":
+      return "secondary";
+    case "rejected":
+      return "destructive";
+    case "pending":
+    default:
+      return "outline";
+  }
 };
 
 interface FavoriteWithListing {
@@ -49,6 +94,7 @@ const Dashboard = () => {
   const { favorites, toggleFavorite } = useFavorites();
   const { cartItems, toggleCart } = useCart();
   const { listings: myListings, loading: listingsLoading } = useMyListings();
+  const { submissions: mySubmissions, loading: submissionsLoading } = useMySubmissions();
   const { orders, loading: ordersLoading } = useOrders();
   const [searchParams] = useSearchParams();
 
@@ -61,6 +107,8 @@ const Dashboard = () => {
   const defaultTab = ["favorites", "cart", "my-purchases", "my-sales"].includes(tabFromUrl || "") 
     ? tabFromUrl! 
     : "favorites";
+
+  const mySalesCount = myListings.length + mySubmissions.length;
 
   useEffect(() => {
     const fetchListingsData = async () => {
@@ -171,9 +219,9 @@ const Dashboard = () => {
               <TabsTrigger value="my-sales" className="gap-2">
                 <ClipboardList className="h-4 w-4" />
                 <span className="hidden sm:inline">Мои продажи ИС</span>
-                {myListings.length > 0 && (
+                {mySalesCount > 0 && (
                   <Badge variant="secondary" className="ml-1">
-                    {myListings.length}
+                    {mySalesCount}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -398,121 +446,175 @@ const Dashboard = () => {
             <TabsContent value="my-sales">
               <div className="card-elevated p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold">Мои продажи</h2>
+                  <h2 className="text-xl font-semibold">Мои продажи ИС</h2>
                   <Button asChild>
                     <Link to="/sell">Разместить объект</Link>
                   </Button>
                 </div>
-                {listingsLoading ? (
+
+                {listingsLoading || submissionsLoading ? (
                   <div className="animate-pulse space-y-4">
                     {[1, 2].map((i) => (
                       <div key={i} className="h-32 bg-muted rounded" />
                     ))}
                   </div>
-                ) : myListings.length === 0 ? (
+                ) : myListings.length === 0 && mySubmissions.length === 0 ? (
                   <div className="text-center py-12">
                     <ClipboardList className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground mb-4">
-                      У вас пока нет объектов на продажу
+                      У вас пока нет заявок или опубликованных объектов
                     </p>
                     <Button asChild>
                       <Link to="/sell">Разместить первый объект</Link>
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {myListings.map((listing) => (
-                      <div
-                        key={listing.id}
-                        className="p-4 rounded-lg border border-border"
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <h3 className="font-medium">{listing.name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {listing.category}
-                            </p>
-                          </div>
-                          <Badge
-                            variant={
-                              listing.status === "published"
-                                ? "default"
-                                : listing.status === "sold"
-                                ? "secondary"
-                                : "outline"
-                            }
-                          >
-                            {listing.status === "published"
-                              ? "Опубликован"
-                              : listing.status === "sold"
-                              ? "Продан"
-                              : listing.status === "active"
-                              ? "Активен"
-                              : "На модерации"}
-                          </Badge>
-                        </div>
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Заявки на размещение</h3>
+                      {mySubmissions.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          Заявок пока нет.
+                        </p>
+                      ) : (
+                        <div className="space-y-4">
+                          {mySubmissions.map((submission) => (
+                            <div
+                              key={submission.id}
+                              className="p-4 rounded-lg border border-border"
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                  <h4 className="font-medium truncate">{submission.name}</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {submission.category} • {formatDateShort(submission.created_at)}
+                                  </p>
+                                  {submission.admin_notes && (
+                                    <p className="text-sm text-muted-foreground mt-2">
+                                      {submission.admin_notes}
+                                    </p>
+                                  )}
+                                </div>
+                                <Badge variant={getSubmissionStatusVariant(submission.status)}>
+                                  {getSubmissionStatusLabel(submission.status)}
+                                </Badge>
+                              </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-muted/50">
-                          <div className="flex items-center gap-2">
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <p className="text-sm font-medium">
-                                {listing.views_count}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Просмотров
-                              </p>
+                              <div className="flex items-center justify-between mt-4">
+                                <p className="text-sm text-muted-foreground">
+                                  Документов: {submission.documents?.length || 0}
+                                </p>
+                                <p className="font-semibold text-primary">
+                                  {formatPrice(submission.price)}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Heart className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <p className="text-sm font-medium">
-                                {listing.favorites_count}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                В избранном
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <p className="text-sm font-medium">
-                                {listing.cart_count}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                В корзинах
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <p className="text-sm font-medium text-primary">
-                                {formatPrice(listing.price)}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Цена
-                              </p>
-                            </div>
-                          </div>
+                          ))}
                         </div>
+                      )}
+                    </div>
 
-                        <div className="flex gap-2 mt-4">
-                          <Button variant="outline" size="sm" asChild>
-                            <Link to={`/catalog/${listing.id}`}>
-                              <ExternalLink className="h-4 w-4 mr-2" />
-                              Открыть
-                            </Link>
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <BarChart3 className="h-4 w-4 mr-2" />
-                            Аналитика
-                          </Button>
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Опубликованные объекты</h3>
+                      {myListings.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          Пока нет опубликованных объектов. После статуса “Опубликована” объект появится в каталоге.
+                        </p>
+                      ) : (
+                        <div className="space-y-4">
+                          {myListings.map((listing) => (
+                            <div
+                              key={listing.id}
+                              className="p-4 rounded-lg border border-border"
+                            >
+                              <div className="flex items-start justify-between mb-4">
+                                <div>
+                                  <h4 className="font-medium">{listing.name}</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {listing.category}
+                                  </p>
+                                </div>
+                                <Badge
+                                  variant={
+                                    listing.status === "published"
+                                      ? "default"
+                                      : listing.status === "sold"
+                                      ? "secondary"
+                                      : "outline"
+                                  }
+                                >
+                                  {listing.status === "published"
+                                    ? "Опубликован"
+                                    : listing.status === "sold"
+                                    ? "Продан"
+                                    : listing.status === "active"
+                                    ? "Активен"
+                                    : "На модерации"}
+                                </Badge>
+                              </div>
+
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-muted/50">
+                                <div className="flex items-center gap-2">
+                                  <Eye className="h-4 w-4 text-muted-foreground" />
+                                  <div>
+                                    <p className="text-sm font-medium">
+                                      {listing.views_count}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Просмотров
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Heart className="h-4 w-4 text-muted-foreground" />
+                                  <div>
+                                    <p className="text-sm font-medium">
+                                      {listing.favorites_count}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      В избранном
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                                  <div>
+                                    <p className="text-sm font-medium">
+                                      {listing.cart_count}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      В корзинах
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                                  <div>
+                                    <p className="text-sm font-medium text-primary">
+                                      {formatPrice(listing.price)}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">Цена</p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex gap-2 mt-4">
+                                <Button variant="outline" size="sm" asChild>
+                                  <Link to={`/catalog/${listing.id}`}>
+                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                    Открыть
+                                  </Link>
+                                </Button>
+                                <Button variant="outline" size="sm">
+                                  <BarChart3 className="h-4 w-4 mr-2" />
+                                  Аналитика
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    ))}
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

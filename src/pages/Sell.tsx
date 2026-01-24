@@ -126,13 +126,22 @@ const Sell = () => {
       
       toast({
         title: "Заявка отправлена",
-        description: "Мы свяжемся с вами для уточнения деталей в течение 24 часов. Переходим в личный кабинет...",
+        description: "Мы свяжемся с вами для уточнения деталей в течение 24 часов.",
       });
-      
-      // Redirect to dashboard's "my-sales" tab after short delay
-      setTimeout(() => {
-        navigate("/dashboard?tab=my-sales");
-      }, 1500);
+
+      // Reset form state (so returning to the page doesn't show old data)
+      setDocumentFiles([]);
+      setCategory("");
+      setTitle("");
+      setRegNumber("");
+      setDescription("");
+      setPrice("");
+      setContactName("");
+      setContactEmail("");
+      setContactPhone("");
+
+      // Redirect immediately to dashboard's "my-sales" tab
+      navigate("/dashboard?tab=my-sales", { replace: true });
     } catch (error: any) {
       toast({
         title: "Ошибка",
