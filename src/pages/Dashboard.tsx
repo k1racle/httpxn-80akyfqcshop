@@ -24,6 +24,7 @@ import { useMySubmissions } from "@/hooks/useSubmissions";
 import { useOrders, getStatusLabel, getStatusColor, Order } from "@/hooks/useOrders";
 import { supabase } from "@/integrations/supabase/client";
 import SubmissionCard from "@/components/dashboard/SubmissionCard";
+import CheckoutDialog from "@/components/dashboard/CheckoutDialog";
 
 const formatPrice = (price: number | null) => {
   if (!price) return "Договорная";
@@ -49,15 +50,16 @@ interface CartItemWithListing {
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const { favorites, toggleFavorite } = useFavorites();
-  const { cartItems, toggleCart } = useCart();
+  const { cartItems, toggleCart, refetch: refetchCart } = useCart();
   const { listings: myListings, loading: listingsLoading } = useMyListings();
   const { submissions: mySubmissions, loading: submissionsLoading, refetch: refetchSubmissions } = useMySubmissions();
-  const { orders, loading: ordersLoading } = useOrders();
-  const [searchParams] = useSearchParams();
+  const { orders, loading: ordersLoading, refetch: refetchOrders } = useOrders();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [favoritesWithListings, setFavoritesWithListings] = useState<FavoriteWithListing[]>([]);
   const [cartWithListings, setCartWithListings] = useState<CartItemWithListing[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   
   // Get tab from URL params, default to "favorites"
   const tabFromUrl = searchParams.get("tab");
@@ -316,10 +318,27 @@ const Dashboard = () => {
                           )}
                         </span>
                       </div>
-                      <Button variant="hero" size="lg" className="w-full">
+                      <Button 
+                        variant="hero" 
+                        size="lg" 
+                        className="w-full"
+                        onClick={() => setCheckoutOpen(true)}
+                      >
                         Оформить заявку на покупку
                       </Button>
                     </div>
+                    
+                    <CheckoutDialog 
+                      open={checkoutOpen}
+                      onOpenChange={setCheckoutOpen}
+                      cartItems={cartWithListings}
+                      onSuccess={() => {
+                        refetchCart();
+                        refetchOrders();
+                        setCartWithListings([]);
+                        setSearchParams({ tab: "my-purchases" });
+                      }}
+                    />
                   </>
                 )}
               </div>
