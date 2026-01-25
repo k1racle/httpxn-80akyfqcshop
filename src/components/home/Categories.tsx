@@ -15,12 +15,11 @@ import {
   Bookmark
 } from "lucide-react";
 
-const categories = [
-  // Ряд 1 — максимальная ликвидность
+const row1Categories = [
   {
     id: "techpacks",
     title: "Технологические пакеты",
-    description: "Патенты + спецификации + документация + БД",
+    description: "Готовые комплексные решения: патенты, спецификации, документация и структурированные данные",
     icon: Package,
     count: 0,
     href: "/catalog?category=techpacks",
@@ -28,7 +27,7 @@ const categories = [
   {
     id: "ai-models",
     title: "Модели ИИ и алгоритмы",
-    description: "ML-модели, нейросети, алгоритмы оптимизации",
+    description: "Обученные ML-модели, нейросетевые алгоритмы и вычислительные методы для автоматизации задач",
     icon: Brain,
     count: 0,
     href: "/catalog?category=ai-models",
@@ -36,7 +35,7 @@ const categories = [
   {
     id: "software",
     title: "ПО, код, IT-продукты",
-    description: "Программы для ЭВМ, модули, скрипты",
+    description: "Программы для ЭВМ, модули, сервисы и готовые цифровые решения для внедрения в бизнес-процессы",
     icon: Code,
     count: 234,
     href: "/catalog?category=software",
@@ -44,16 +43,18 @@ const categories = [
   {
     id: "datasets",
     title: "Датасеты и выборки",
-    description: "Обучающие выборки, коммерческие наборы данных",
+    description: "Коммерческие наборы данных для обучения ИИ, аналитики и разработки алгоритмов",
     icon: BarChart3,
     count: 0,
     href: "/catalog?category=datasets",
   },
-  // Ряд 2 — высокий юридический вес
+];
+
+const row2Categories = [
   {
     id: "patents",
     title: "Патенты",
-    description: "Изобретения, полезные модели, промобразцы",
+    description: "Изобретения, полезные модели и промышленные образцы с зарегистрированными правами",
     icon: Lightbulb,
     count: 89,
     href: "/catalog?category=patents",
@@ -61,7 +62,7 @@ const categories = [
   {
     id: "databases",
     title: "Базы данных",
-    description: "Структурированные массивы информации",
+    description: "Юридически защищённые структурированные массивы информации, доступные для передачи прав",
     icon: Database,
     count: 45,
     href: "/catalog?category=databases",
@@ -69,7 +70,7 @@ const categories = [
   {
     id: "knowhow",
     title: "Ноу-хау",
-    description: "Рецептуры, производственные секреты",
+    description: "Секреты производства, рецептуры, технологии и конфиденциальные методы работы",
     icon: Lock,
     count: 32,
     href: "/catalog?category=knowhow",
@@ -77,16 +78,18 @@ const categories = [
   {
     id: "specifications",
     title: "Техспецификации",
-    description: "Чертежи, схемы, ТУ, регламенты",
+    description: "Чертежи, схемы, ТУ, регламенты и техническая документация для производственных процессов",
     icon: Cpu,
     count: 69,
     href: "/catalog?category=specifications",
   },
-  // Ряд 3 — брендинг, медиа, R&D
+];
+
+const row3Categories = [
   {
     id: "trademarks",
     title: "Товарные знаки",
-    description: "Бренды, знаки обслуживания, домены",
+    description: "Зарегистрированные бренды, знаки обслуживания, фирменные наименования и домены",
     icon: Bookmark,
     count: 234,
     href: "/catalog?category=trademarks",
@@ -94,7 +97,7 @@ const categories = [
   {
     id: "copyrights",
     title: "Авторские права",
-    description: "Тексты, дизайн, фото, медиа, курсы",
+    description: "Тексты, дизайн, фото, видео и обучающие материалы с зарегистрированными правами автора",
     icon: FileText,
     count: 121,
     href: "/catalog?category=copyrights",
@@ -102,7 +105,7 @@ const categories = [
   {
     id: "digital-twins",
     title: "Digital Twins",
-    description: "Цифровые двойники процессов и оборудования",
+    description: "Цифровые двойники процессов, оборудования и объектов для моделирования и оптимизации",
     icon: Box,
     count: 0,
     href: "/catalog?category=digital-twins",
@@ -110,12 +113,49 @@ const categories = [
   {
     id: "prototypes",
     title: "Прототипы и R&D",
-    description: "Исследования, разработки ранних стадий",
+    description: "Исследовательские разработки, экспериментальные материалы и решения на ранней стадии",
     icon: Beaker,
     count: 23,
     href: "/catalog?category=prototypes",
   },
 ];
+
+interface CategoryCardProps {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  count: number;
+  href: string;
+}
+
+const CategoryCard = ({ id, title, description, icon: Icon, count, href }: CategoryCardProps) => (
+  <Link
+    to={href}
+    className="group card-elevated p-6 flex flex-col min-h-[220px]"
+  >
+    <div className="flex items-start justify-between mb-4">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent group-hover:bg-primary transition-colors">
+        <Icon className="h-6 w-6 text-accent-foreground group-hover:text-primary-foreground transition-colors" />
+      </div>
+      <span className="text-sm font-medium text-muted-foreground">
+        {count}
+      </span>
+    </div>
+    
+    <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
+      {title}
+    </h3>
+    <p className="text-sm text-muted-foreground mb-4 flex-1 leading-[1.3]">
+      {description}
+    </p>
+    
+    <div className="flex items-center gap-2 text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+      Смотреть каталог
+      <ArrowRight className="h-4 w-4" />
+    </div>
+  </Link>
+);
 
 const Categories = () => {
   return (
@@ -128,35 +168,40 @@ const Categories = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {categories.map((category) => (
-            <Link
-              key={category.id}
-              to={category.href}
-              className="group card-elevated p-6 flex flex-col h-[200px]"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent group-hover:bg-primary transition-colors">
-                  <category.icon className="h-6 w-6 text-accent-foreground group-hover:text-primary-foreground transition-colors" />
-                </div>
-                <span className="text-sm font-medium text-muted-foreground">
-                  {category.count}
-                </span>
-              </div>
-              
-              <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
-                {category.title}
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4 flex-1 line-clamp-2">
-                {category.description}
-              </p>
-              
-              <div className="flex items-center gap-2 text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                Смотреть каталог
-                <ArrowRight className="h-4 w-4" />
-              </div>
-            </Link>
-          ))}
+        {/* Ряд 1: Технологические и цифровые активы */}
+        <div className="mb-10">
+          <h3 className="text-lg font-semibold text-foreground mb-4 px-1">
+            Технологические и цифровые активы
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {row1Categories.map((category) => (
+              <CategoryCard key={category.id} {...category} />
+            ))}
+          </div>
+        </div>
+
+        {/* Ряд 2: Юридическая и технологическая документация */}
+        <div className="mb-10">
+          <h3 className="text-lg font-semibold text-foreground mb-4 px-1">
+            Юридическая и технологическая документация
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {row2Categories.map((category) => (
+              <CategoryCard key={category.id} {...category} />
+            ))}
+          </div>
+        </div>
+
+        {/* Ряд 3: Брендинг, медиа и R&D */}
+        <div>
+          <h3 className="text-lg font-semibold text-foreground mb-4 px-1">
+            Брендинг, медиа и R&D
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {row3Categories.map((category) => (
+              <CategoryCard key={category.id} {...category} />
+            ))}
+          </div>
         </div>
       </div>
     </section>
