@@ -610,7 +610,8 @@ const descriptionTemplates: Record<string, {
   }
 };
 
-const legalStatusText = "Объект носит ознакомительный характер и предназначен для демонстрации структуры и формата каталога. Не является предложением о продаже и недоступен для заключения сделки.";
+// Краткий юридический статус (согласно рамке v3.0: 2 строки максимум)
+const legalStatusText = "Ознакомительный объект. Не участвует в сделках.";
 
 // Generate random price within category range
 function generateRandomPrice(category: string): number {
@@ -677,8 +678,9 @@ export function generateDemoListings(): DemoListing[] {
         legal_status: legalStatusText
       };
       
-      // Create flat description string for card display
-      const flatDescription = descData.purpose;
+      // Краткое описание для карточки (5-7 строк, простой язык)
+      // Формат: назначение объекта в одном предложении
+      const flatDescription = `${descData.purpose.split('.')[0]}.`;
 
       items.push({
         id: `demo-${globalIndex}`,

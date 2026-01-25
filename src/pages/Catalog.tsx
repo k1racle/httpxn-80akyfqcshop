@@ -13,6 +13,7 @@ import {
 import { Search, Filter, SlidersHorizontal, Loader2 } from "lucide-react";
 import ListingCard from "@/components/catalog/ListingCard";
 import { useListings, Listing } from "@/hooks/useListings";
+import { mapDbStatusToCode, LISTING_STATUSES } from "@/types/listingStatus";
 
 const categories = [
   { id: "all", label: "Все категории" },
@@ -61,13 +62,26 @@ const Catalog = () => {
   
   const { listings, loading } = useListings();
 
+  // Фильтрация и СОРТИРОВКА по статусам (S2 → S1 → S0, S3 скрыт)
   const filteredListings = useMemo(() => {
-    return listings.filter((item) => {
+    const filtered = listings.filter((item) => {
       const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
       const matchesSearch = 
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
-      return matchesCategory && matchesSearch;
+      
+      // Скрываем S3 (Архив) по умолчанию
+      const statusCode = mapDbStatusToCode(item.status, item.is_demo);
+      const isNotArchived = statusCode !== 'S3';
+      
+      return matchesCategory && matchesSearch && isNotArchived;
+    });
+    
+    // Сортировка: S2 (Доступен) → S1 (На проверке) → S0 (Ознакомительный)
+    return filtered.sort((a, b) => {
+      const statusA = mapDbStatusToCode(a.status, a.is_demo);
+      const statusB = mapDbStatusToCode(b.status, b.is_demo);
+      return LISTING_STATUSES[statusA].sortOrder - LISTING_STATUSES[statusB].sortOrder;
     });
   }, [listings, categoryFilter, searchQuery]);
 
@@ -147,6 +161,7 @@ const Catalog = () => {
                   description={item.description || ""}
                   isDemo={item.is_demo}
                   demoLabel={item.demo_label}
+                  dbStatus={item.status}
                 />
               ))}
             </div>
