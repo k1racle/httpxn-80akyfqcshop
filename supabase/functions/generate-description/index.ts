@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// MASTER FRAMEWORK: Legal-Technological Mode / No Hallucinations / Strict Order
-// This framework is permanently applied to all description generations
+// MASTER FRAMEWORK v2.1: Legal-Technological Mode / No Hallucinations / Strict Order
+// Key rule: Variant B = status + reason + action. Not description. Not analysis.
 
 interface GenerationRequest {
   category: string;
@@ -26,14 +26,12 @@ interface GenerationRequest {
 }
 
 // Check data sufficiency: at least 3 of 5 conditions must be met
-function checkDataSufficiency(data: GenerationRequest): { sufficient: boolean; score: number; conditions: string[] } {
-  const conditions: string[] = [];
+function checkDataSufficiency(data: GenerationRequest): { sufficient: boolean; score: number } {
   let score = 0;
 
   // Condition 1: Object name is specified
   if (data.title && data.title.trim().length > 0) {
     score++;
-    conditions.push("наименование объекта");
   }
 
   // Condition 2: Registration number OR document attached
@@ -43,19 +41,16 @@ function checkDataSufficiency(data: GenerationRequest): { sufficient: boolean; s
     data.hasRegistryExtract
   ) {
     score++;
-    conditions.push("регистрационные сведения или документ");
   }
 
   // Condition 3: At least one legal document uploaded
   if (data.hasRegistrationCertificate || data.hasRegistryExtract || data.hasPowerOfAttorney || data.hasIPImage) {
     score++;
-    conditions.push("правоустанавливающий документ");
   }
 
   // Condition 4: Object type is defined
   if (data.category && data.category.trim().length > 0) {
     score++;
-    conditions.push("тип объекта ИС");
   }
 
   // Condition 5: Composition or MKTU classes or functional description defined
@@ -65,22 +60,23 @@ function checkDataSufficiency(data: GenerationRequest): { sufficient: boolean; s
     (data.currentDescription && data.currentDescription.trim().length > 50)
   ) {
     score++;
-    conditions.push("состав или функциональное описание");
   }
 
   return {
     sufficient: score >= 3,
-    score,
-    conditions
+    score
   };
 }
 
-// Insufficient data response - FIXED TEXT, NO VARIATIONS
-const INSUFFICIENT_DATA_RESPONSE = `Генерация полного описания объекта интеллектуальной собственности невозможна в связи с недостаточностью исходных данных.
+// VARIANT B: Insufficient data - FIXED SHORT TEMPLATE (max 500 chars)
+// NO explanations, NO listing missing docs, NO 5-section structure
+const INSUFFICIENT_DATA_RESPONSE = `Полное описание объекта интеллектуальной собственности не сформировано.
 
-Для формирования корректного юридико-технологического описания требуется дополнительная информация и/или подтверждающие документы.
+Причина: недостаточность исходных данных и отсутствие подтверждающих документов.
 
-Пожалуйста, добавьте наименование объекта, регистрационные сведения и правоустанавливающие материалы.`;
+Для генерации описания требуется предоставить регистрационные сведения и правоустанавливающие материалы.
+
+До получения данных объект имеет ознакомительный статус.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -115,15 +111,18 @@ serve(async (req) => {
     // STEP 1: Check data sufficiency (MANDATORY BRANCHING)
     const sufficiencyCheck = checkDataSufficiency(data);
 
-    // VARIANT B: Insufficient data → REFUSE GENERATION
+    // VARIANT B: Insufficient data → BLOCKED_SHORT mode
+    // Return fixed template IMMEDIATELY, no AI call, no analysis
     if (!sufficiencyCheck.sufficient && !data.isDemo) {
-      console.log(`Data sufficiency check failed: ${sufficiencyCheck.score}/5 conditions met`);
+      console.log(`[BLOCKED_SHORT] Data sufficiency: ${sufficiencyCheck.score}/5`);
       return new Response(
         JSON.stringify({ 
           description: INSUFFICIENT_DATA_RESPONSE,
+          generation_mode: "blocked_short",
+          max_chars: 500,
           insufficientData: true,
           score: sufficiencyCheck.score,
-          metConditions: sufficiencyCheck.conditions
+          status_reason: "insufficient_data"
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -155,89 +154,74 @@ serve(async (req) => {
 
     const categoryName = categoryLabels[data.category] || data.category || "не определён";
 
-    // Build available data summary
+    // Build available data summary for AI
     const availableData: string[] = [];
     if (data.title) availableData.push(`Наименование: ${data.title}`);
     if (data.registrationNumber) availableData.push(`Рег. номер: ${data.registrationNumber}`);
-    if (data.hasRegistrationCertificate) availableData.push("Загружено: свидетельство о регистрации");
-    if (data.hasRegistryExtract) availableData.push("Загружено: выписка из реестра");
-    if (data.hasPowerOfAttorney) availableData.push("Загружено: документ о полномочиях");
-    if (data.hasFullDocumentation) availableData.push("Загружено: полная документация");
-    if (data.hasIPImage) availableData.push("Загружено: изображение объекта ИС");
+    if (data.hasRegistrationCertificate) availableData.push("Свидетельство о регистрации: загружено");
+    if (data.hasRegistryExtract) availableData.push("Выписка из реестра: загружена");
+    if (data.hasPowerOfAttorney) availableData.push("Документ о полномочиях: загружен");
+    if (data.hasFullDocumentation) availableData.push("Полная документация: загружена");
+    if (data.hasIPImage) availableData.push("Изображение объекта: загружено");
     if (data.mktuClasses) availableData.push(`Классы МКТУ: ${data.mktuClasses}`);
-    if (data.documentInfo) availableData.push(`Сведения из документов: ${data.documentInfo}`);
+    if (data.documentInfo) availableData.push(`Из документов: ${data.documentInfo}`);
     if (data.ownerInfo) availableData.push(`Правообладатель: ${data.ownerInfo}`);
 
-    const dataFromDocuments = data.documentInfo || data.currentDescription;
-    const isDocumentBasedGeneration = dataFromDocuments && !data.title && !data.registrationNumber;
+    // MASTER FRAMEWORK v2.1 SYSTEM PROMPT
+    const systemPrompt = `РОЛЬ: Системный юридико-технологический редактор каталога ИС.
+НЕ автор, НЕ маркетолог, НЕ аналитик.
 
-    // MASTER FRAMEWORK SYSTEM PROMPT
-    const systemPrompt = `РОЛЬ: Ты — системный юридико-технологический редактор каталога ИС.
-Ты НЕ автор, НЕ маркетолог, НЕ аналитик.
-Ты формируешь текст ТОЛЬКО при наличии достаточных оснований.
-
-КЛЮЧЕВОЙ ПРИНЦИП: НЕТ ДАННЫХ → НЕТ ГЕНЕРАЦИИ
+КЛЮЧЕВОЙ ПРИНЦИП: НЕТ ДАННЫХ → НЕТ УТВЕРЖДЕНИЯ
 
 РАЗРЕШЕНО ИСПОЛЬЗОВАТЬ ТОЛЬКО:
-1. Заполненные поля формы
-2. Загруженные документы
-3. Текст описания, введённый пользователем
+- Заполненные поля формы
+- Загруженные документы
+- Текст от пользователя
 
 КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО:
-- Расширять смысл
-- Делать выводы "по аналогии"
+- Расширять смысл, делать выводы "по аналогии"
 - Дополнять отсутствующие фрагменты
 - Додумывать свойства, функции, преимущества
 - Использовать маркетинговые формулировки
 - Использовать markdown, списки, caps-заголовки
 - Писать больше, чем позволяют данные
+- ПЕРЕЧИСЛЯТЬ отсутствующие документы (это "описание отсутствия")
 
-СТРУКТУРА ОПИСАНИЯ (фиксированная, сплошным текстом без заголовков):
+СТРУКТУРА (сплошным текстом, без заголовков):
+1. Общее описание объекта
+2. Юридическое основание и статус прав
+3. Состав и содержание объекта
+4. Область применения
+5. Ограничения и условия
 
-1. Общее описание объекта — тип, назначение строго по данным
-2. Юридическое основание и статус прав — только подтверждённые сведения
-3. Состав и содержание объекта — только из документов
-4. Область применения — ТОЛЬКО если прямо указано в данных
-5. Ограничения и условия — территория, сроки, риски
+ОБЪЁМ: 1800-2500 знаков.
 
-ОБЪЁМ: 1800-2500 знаков (если данных достаточно).
-
-${isDocumentBasedGeneration ? 'ОБЯЗАТЕЛЬНО указать в начале: "Описание сформировано на основании загруженных материалов. Часть сведений может отсутствовать."' : ''}
-
-КОНТРОЛЬ ПЕРЕД ВЫВОДОМ:
-Задай себе вопрос: "Каждое ли утверждение можно показать юристу с указанием источника?"
-Если нет → удалить утверждение.
-
-ФОРМУЛА: Нет источника → нет утверждения.`;
+КОНТРОЛЬ: Каждое утверждение = источник в данных.`;
 
     let userPrompt = "";
 
     if (data.isDemo) {
       userPrompt = `Создай описание для ОЗНАКОМИТЕЛЬНОЙ карточки.
 
-ТИП ОБЪЕКТА: ${categoryName}
-СТАТУС: ОЗНАКОМИТЕЛЬНЫЙ (демо-карточка для демонстрации структуры каталога)
+ТИП: ${categoryName}
+СТАТУС: ОЗНАКОМИТЕЛЬНЫЙ
 
 ТРЕБОВАНИЯ:
-1. Явно указать: "Карточка носит ознакомительный характер, предназначена для демонстрации структуры каталога и не является предложением о заключении сделки."
-2. Типовое описание для категории без конкретных утверждений о свойствах.
-3. В конце: "Представленная информация носит справочный характер и не отражает фактическую регистрацию прав."`;
+1. Начать с: "Карточка носит ознакомительный характер и предназначена для демонстрации структуры каталога."
+2. Типовое описание категории без конкретных утверждений.
+3. Завершить: "Не является предложением о заключении сделки."`;
     } else {
-      userPrompt = `Создай описание объекта ИС на основании ТОЛЬКО следующих данных:
+      userPrompt = `Создай описание объекта ИС.
 
-ТИП ОБЪЕКТА: ${categoryName}
+ТИП: ${categoryName}
 
-ДОСТУПНЫЕ ДАННЫЕ:
-${availableData.length > 0 ? availableData.join("\n") : "Минимальный набор данных"}
+ИМЕЮЩИЕСЯ ДАННЫЕ:
+${availableData.join("\n")}
 
-${data.currentDescription ? `ТЕКСТ ОТ ПОЛЬЗОВАТЕЛЯ:\n${data.currentDescription}` : ""}
-${data.functionalDescription ? `ФУНКЦИОНАЛЬНОЕ ОПИСАНИЕ:\n${data.functionalDescription}` : ""}
+${data.currentDescription ? `ТЕКСТ ПОЛЬЗОВАТЕЛЯ:\n${data.currentDescription}` : ""}
+${data.functionalDescription ? `ФУНКЦИОНАЛ:\n${data.functionalDescription}` : ""}
 
-КРИТИЧЕСКИ ВАЖНО:
-- Используй ТОЛЬКО предоставленные данные
-- Если данных для раздела нет — укажи "сведения отсутствуют"
-- НЕ додумывай, НЕ расширяй, НЕ обобщай
-- Каждое утверждение должно иметь источник в данных выше`;
+ПРАВИЛО: Используй ТОЛЬКО данные выше. Нет источника = нет утверждения.`;
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -253,7 +237,7 @@ ${data.functionalDescription ? `ФУНКЦИОНАЛЬНОЕ ОПИСАНИЕ:\n
           { role: "user", content: userPrompt },
         ],
         max_tokens: 2500,
-        temperature: 0.2, // Very low for maximum factuality
+        temperature: 0.2,
       }),
     });
 
@@ -285,7 +269,7 @@ ${data.functionalDescription ? `ФУНКЦИОНАЛЬНОЕ ОПИСАНИЕ:\n
       throw new Error("No content in AI response");
     }
 
-    // Clean up any formatting that might have slipped through
+    // Clean up formatting
     generatedDescription = generatedDescription
       .replace(/\*\*/g, "")
       .replace(/\*/g, "")
@@ -302,9 +286,10 @@ ${data.functionalDescription ? `ФУНКЦИОНАЛЬНОЕ ОПИСАНИЕ:\n
     return new Response(
       JSON.stringify({ 
         description: generatedDescription,
+        generation_mode: "full",
         insufficientData: false,
         score: sufficiencyCheck.score,
-        metConditions: sufficiencyCheck.conditions
+        status_reason: "generated"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
