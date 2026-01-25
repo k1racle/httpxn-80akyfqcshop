@@ -16,33 +16,33 @@ import { useListings, Listing } from "@/hooks/useListings";
 
 const categories = [
   { id: "all", label: "Все категории" },
-  { id: "trademarks", label: "Товарные знаки" },
+  { id: "techpacks", label: "Технологические пакеты" },
+  { id: "ai-models", label: "Модели ИИ и алгоритмы" },
+  { id: "datasets", label: "Датасеты и цифровые выборки" },
   { id: "patents", label: "Патенты" },
-  { id: "software", label: "Программы и код" },
-  { id: "copyrights", label: "Авторские права" },
-  { id: "industrial", label: "Промышленные образцы" },
-  { id: "commercial", label: "Коммерческие обозначения" },
+  { id: "software", label: "ПО, код, IT-продукты" },
   { id: "databases", label: "Базы данных" },
-  { id: "knowhow", label: "Ноу-хау" },
-  { id: "specifications", label: "ТУ и техдокументация" },
-  { id: "educational", label: "Образовательные материалы" },
-  { id: "prototypes", label: "Прототипы и НИОКР" },
-  { id: "other", label: "Другое" },
+  { id: "knowhow", label: "Ноу-хау и конфиденциальные технологии" },
+  { id: "specifications", label: "Технические спецификации и документация" },
+  { id: "trademarks", label: "Товарные знаки и коммерческие обозначения" },
+  { id: "copyrights", label: "Авторские права и контент" },
+  { id: "digital-twins", label: "Digital Twins" },
+  { id: "prototypes", label: "Прототипы и R&D" },
 ];
 
 const categoryLabels: Record<string, string> = {
-  trademarks: "Товарные знаки",
+  techpacks: "Технологические пакеты",
+  "ai-models": "Модели ИИ и алгоритмы",
+  datasets: "Датасеты и цифровые выборки",
   patents: "Патенты",
-  software: "Программы и код",
-  copyrights: "Авторские права",
-  industrial: "Промышленные образцы",
-  commercial: "Коммерческие обозначения",
+  software: "ПО, код, IT-продукты",
   databases: "Базы данных",
-  knowhow: "Ноу-хау",
-  specifications: "ТУ и техдокументация",
-  educational: "Образовательные материалы",
-  prototypes: "Прототипы и НИОКР",
-  other: "Другое",
+  knowhow: "Ноу-хау и конфиденциальные технологии",
+  specifications: "Технические спецификации и документация",
+  trademarks: "Товарные знаки и коммерческие обозначения",
+  copyrights: "Авторские права и контент",
+  "digital-twins": "Digital Twins",
+  prototypes: "Прототипы и R&D",
 };
 
 const formatPrice = (price: number | null): string => {
@@ -104,7 +104,7 @@ const Catalog = () => {
               />
             </div>
             <Select value={categoryFilter} onValueChange={handleCategoryChange}>
-              <SelectTrigger className="w-full sm:w-[220px]">
+              <SelectTrigger className="w-full sm:w-[280px]">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Категория" />
               </SelectTrigger>
