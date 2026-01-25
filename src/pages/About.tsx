@@ -16,22 +16,22 @@ const values = [
   {
     icon: Shield,
     title: "Безопасность",
-    description: "Каждая сделка защищена эскроу-платежами и юридической экспертизой. Средства переводятся продавцу только после подтверждения передачи прав.",
+    description: "Сделка не может быть проведена без эскроу-расчёта. Средства переводятся продавцу только после подтверждения передачи прав.",
   },
   {
     icon: Scale,
     title: "Юридическая чистота",
-    description: "Все объекты проходят обязательную проверку: подлинность документов, отсутствие обременений, правомочность продавца.",
+    description: "Сделка не может быть проведена без юридической экспертизы: подлинность документов, отсутствие обременений, правомочность продавца.",
   },
   {
     icon: Users,
     title: "Экспертная поддержка",
-    description: "Команда юристов и патентных поверенных сопровождает каждую сделку от первого контакта до регистрации перехода прав.",
+    description: "Сделка сопровождается командой юристов и патентных поверенных от первого контакта до регистрации перехода прав.",
   },
   {
     icon: Target,
     title: "Прозрачность",
-    description: "Чёткие условия, понятный процесс, индивидуальный подход к каждому клиенту. Никаких скрытых комиссий или условий.",
+    description: "Условия сделки фиксируются договором. Никаких скрытых комиссий, двойных трактовок или неоговорённых условий.",
   },
 ];
 
@@ -54,10 +54,13 @@ const About = () => {
             <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-6">
               О платформе <span className="text-gradient">патент.shop</span>
             </h1>
-            <p className="text-xl text-muted-foreground leading-relaxed mb-8">
-              Национальная платформа для безопасной купли-продажи интеллектуальной 
-              собственности в России и странах СНГ. Мы объединяем правообладателей 
-              и покупателей, обеспечивая юридическую чистоту каждой сделки.
+            <p className="text-xl text-muted-foreground leading-relaxed mb-4">
+              patent.shop — инфраструктура для сделок с интеллектуальной собственностью.
+            </p>
+            <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+              Платформа работает по нормам гражданского законодательства РФ и выстроена 
+              как единая система: проверка прав, защита расчётов и юридически корректная 
+              передача ИС-активов.
             </p>
             <div className="flex flex-wrap gap-4">
               <Button variant="hero" size="lg" asChild>
@@ -82,6 +85,9 @@ const About = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl font-bold mb-6">Наша миссия</h2>
+              <p className="text-lg text-foreground font-medium leading-relaxed mb-4">
+                Создать и удерживать порядок на рынке интеллектуальной собственности.
+              </p>
               <p className="text-lg text-muted-foreground leading-relaxed mb-6">
                 Сохранение и развитие интеллектуального потенциала страны. Мы создаём 
                 прозрачную среду для передачи прав на изобретения, товарные знаки, 
@@ -114,8 +120,7 @@ const About = () => {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Наши принципы</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Мы выстроили процессы так, чтобы каждая сделка была максимально 
-              безопасной и комфортной для всех участников
+              Эти принципы обязательны для всех сделок на платформе и не могут быть обойдены
             </p>
           </div>
 
@@ -140,7 +145,7 @@ const About = () => {
       {/* Stats */}
       <section className="section-padding bg-primary text-primary-foreground">
         <div className="container-wide">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-6">
             {stats.map((stat) => (
               <div key={stat.label} className="text-center">
                 <p className="text-4xl sm:text-5xl font-bold mb-2">{stat.value}</p>
@@ -148,6 +153,9 @@ const About = () => {
               </div>
             ))}
           </div>
+          <p className="text-center text-sm text-primary-foreground/50">
+            Данные актуальны на дату публикации и отражают фактические завершённые сделки и размещённые объекты.
+          </p>
         </div>
       </section>
 
@@ -177,10 +185,16 @@ const About = () => {
               ))}
             </div>
 
-            <p className="text-sm text-muted-foreground">
-              Условия сотрудничества, включая комиссию платформы, обсуждаются 
-              индивидуально и фиксируются в договоре с продавцом.
-            </p>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Условия сотрудничества, включая комиссию платформы, обсуждаются 
+                индивидуально и фиксируются в договоре с продавцом.
+              </p>
+              <p className="text-sm font-medium text-foreground">
+                Платформа несёт ответственность за соблюдение регламента проверки 
+                в рамках заключённых договоров.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -191,7 +205,7 @@ const About = () => {
           <div className="text-center max-w-2xl mx-auto">
             <h2 className="text-3xl font-bold mb-4">Готовы начать?</h2>
             <p className="text-muted-foreground mb-8">
-              Присоединяйтесь к платформе для безопасных сделок с интеллектуальной собственностью
+              Начните работу с интеллектуальной собственностью в юридически выстроенной системе
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Button variant="hero" size="lg" asChild>
