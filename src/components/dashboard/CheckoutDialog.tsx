@@ -139,8 +139,38 @@ const CheckoutDialog = ({ open, onOpenChange, cartItems, onSuccess }: CheckoutDi
           status: "pending" as const,
         };
 
-        const { error } = await supabase.from("orders").insert(orderData);
+        const { data: orderResult, error } = await supabase.from("orders").insert(orderData).select().single();
         if (error) throw error;
+
+        // Get seller ID from listing
+        const { data: listingData } = await supabase
+          .from("ip_listings")
+          .select("user_id")
+          .eq("id", item.listing.id)
+          .maybeSingle();
+
+        // Send notification to seller and admin
+        try {
+          await supabase.functions.invoke("send-order-notification", {
+            body: {
+              type: "new_order",
+              orderId: orderResult.id,
+              orderName: item.listing.name,
+              orderCategory: item.listing.category,
+              orderPrice: item.listing.price || 0,
+              status: "pending",
+              buyerType: buyerType,
+              buyerInfo: buyerType === "individual" 
+                ? { full_name: fullName, phone, email }
+                : { company_name: companyName, inn, contact_person: contactPerson, phone: companyPhone, email: companyEmail },
+              wantsInstallment: wantsInstallment,
+              sellerId: listingData?.user_id,
+            },
+          });
+        } catch (notifyError) {
+          console.error("Failed to send notification:", notifyError);
+          // Don't fail the order if notification fails
+        }
 
         // Remove from cart
         await supabase.from("cart_items").delete().eq("id", item.id);
