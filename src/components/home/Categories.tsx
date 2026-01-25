@@ -163,8 +163,8 @@ const Categories = () => {
       <div className="container-wide">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Категории интеллектуальной собственности</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Все объекты проходят юридическую проверку перед публикацией
+          <p className="text-muted-foreground max-w-3xl mx-auto">
+            Платформа работает только с объектами ИС, прошедшими юридическую верификацию. Неподтверждённые активы не допускаются в каталог.
           </p>
         </div>
 
