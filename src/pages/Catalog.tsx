@@ -27,6 +27,7 @@ const categories = [
   { id: "specifications", label: "ТУ и техдокументация" },
   { id: "educational", label: "Образовательные материалы" },
   { id: "prototypes", label: "Прототипы и НИОКР" },
+  { id: "other", label: "Другое" },
 ];
 
 const categoryLabels: Record<string, string> = {
@@ -41,6 +42,7 @@ const categoryLabels: Record<string, string> = {
   specifications: "ТУ и техдокументация",
   educational: "Образовательные материалы",
   prototypes: "Прототипы и НИОКР",
+  other: "Другое",
 };
 
 const formatPrice = (price: number | null): string => {

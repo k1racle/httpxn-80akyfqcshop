@@ -11,7 +11,8 @@ import {
   BookOpen,
   Cpu,
   Beaker,
-  ArrowRight 
+  ArrowRight,
+  Layers
 } from "lucide-react";
 
 const categories = [
@@ -102,6 +103,14 @@ const categories = [
     icon: Beaker,
     count: 23,
     href: "/catalog?category=prototypes",
+  },
+  {
+    id: "other",
+    title: "Другое",
+    description: "Лицензии, технологические пакеты, модели ИИ, датасеты и цифровые активы",
+    icon: Layers,
+    count: 0,
+    href: "/catalog?category=other",
   },
 ];
 
