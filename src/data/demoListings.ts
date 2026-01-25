@@ -308,6 +308,28 @@ const padNumber = (num: number): string => {
   return num.toString().padStart(3, "0");
 };
 
+// Price ranges per category (min, max) in RUB
+const categoryPriceRanges: Record<string, [number, number]> = {
+  techpacks: [500000, 5000000],
+  "ai-models": [300000, 3000000],
+  software: [200000, 2500000],
+  datasets: [100000, 1500000],
+  patents: [800000, 8000000],
+  databases: [150000, 2000000],
+  knowhow: [250000, 3500000],
+  specifications: [50000, 500000],
+  trademarks: [100000, 1500000],
+  copyrights: [50000, 800000],
+  "digital-twins": [400000, 4000000],
+  prototypes: [600000, 6000000],
+};
+
+const generateRandomPrice = (min: number, max: number): number => {
+  // Round to nearest 10000
+  const price = Math.floor(Math.random() * (max - min) + min);
+  return Math.round(price / 10000) * 10000;
+};
+
 const generateDemoListings = (): DemoListing[] => {
   const listings: DemoListing[] = [];
   const categorySlugs = Object.keys(categoryData);
@@ -325,6 +347,8 @@ const generateDemoListings = (): DemoListing[] => {
       const descIndex = i % category.descriptions.length;
       const name = category.names[nameIndex];
       const baseDescription = category.descriptions[descIndex];
+      const priceRange = categoryPriceRanges[categorySlug] || [100000, 1000000];
+      const price = generateRandomPrice(priceRange[0], priceRange[1]);
       
       listings.push({
         id: `demo-${globalId}`,
@@ -332,7 +356,7 @@ const generateDemoListings = (): DemoListing[] => {
         name: `${category.type} ${name}`,
         description: baseDescription,
         registration_number: `DEMO-${padNumber(globalId)}`,
-        price: null,
+        price: price,
         price_negotiable: true,
         status: "demo",
         views_count: Math.floor(Math.random() * 200) + 50,
