@@ -350,84 +350,144 @@ const Dashboard = () => {
 
             {/* My Purchases Tab (what user bought) */}
             <TabsContent value="my-purchases">
-              <div className="card-elevated p-6">
-                <h2 className="text-xl font-semibold mb-6">Мои объекты</h2>
-                {ordersLoading ? (
-                  <div className="animate-pulse space-y-4">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="h-24 bg-muted rounded" />
-                    ))}
-                  </div>
-                ) : orders.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground mb-4">
-                      У вас пока нет приобретённых объектов
-                    </p>
-                    <Button asChild>
-                      <Link to="/catalog">Перейти в каталог</Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {orders.map((order) => (
-                      <div
-                        key={order.id}
-                        className="p-4 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors group"
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setOrderDetailOpen(true);
-                        }}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <h3 className="font-medium group-hover:text-primary transition-colors flex items-center gap-2">
-                              {order.listing_snapshot.name}
-                              <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </h3>
+              <div className="space-y-6">
+                {/* Active Orders */}
+                <div className="card-elevated p-6">
+                  <h2 className="text-xl font-semibold mb-6">Активные заявки</h2>
+                  {ordersLoading ? (
+                    <div className="animate-pulse space-y-4">
+                      {[1, 2].map((i) => (
+                        <div key={i} className="h-24 bg-muted rounded" />
+                      ))}
+                    </div>
+                  ) : orders.filter(o => o.status !== 'cancelled').length === 0 ? (
+                    <div className="text-center py-12">
+                      <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground mb-4">
+                        У вас пока нет активных заявок
+                      </p>
+                      <Button asChild>
+                        <Link to="/catalog">Перейти в каталог</Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {orders.filter(o => o.status !== 'cancelled').map((order) => (
+                        <div
+                          key={order.id}
+                          className="p-4 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors group"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setOrderDetailOpen(true);
+                          }}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <h3 className="font-medium group-hover:text-primary transition-colors flex items-center gap-2">
+                                {order.listing_snapshot.name}
+                                <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {order.listing_snapshot.category}
+                              </p>
+                            </div>
+                            <Badge className={getStatusColor(order.status)}>
+                              {getStatusLabel(order.status)}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between mt-4">
                             <p className="text-sm text-muted-foreground">
-                              {order.listing_snapshot.category}
+                              {new Date(order.created_at).toLocaleDateString(
+                                "ru-RU"
+                              )}
+                            </p>
+                            <p className="font-semibold text-primary">
+                              {formatPrice(order.price)}
                             </p>
                           </div>
-                          <Badge className={getStatusColor(order.status)}>
-                            {getStatusLabel(order.status)}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between mt-4">
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(order.created_at).toLocaleDateString(
-                              "ru-RU"
+                          {order.status === "payment_ready" &&
+                            order.payment_url && (
+                              <Button
+                                variant="hero"
+                                size="sm"
+                                className="w-full mt-4"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(order.payment_url!, "_blank");
+                                }}
+                              >
+                                Оплатить
+                              </Button>
                             )}
-                          </p>
-                          <p className="font-semibold text-primary">
-                            {formatPrice(order.price)}
-                          </p>
                         </div>
-                        {order.status === "payment_ready" &&
-                          order.payment_url && (
-                            <Button
-                              variant="hero"
-                              size="sm"
-                              className="w-full mt-4"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(order.payment_url!, "_blank");
-                              }}
-                            >
-                              Оплатить
-                            </Button>
-                          )}
-                      </div>
-                    ))}
-                    
-                    <OrderDetailDialog
-                      order={selectedOrder}
-                      open={orderDetailOpen}
-                      onOpenChange={setOrderDetailOpen}
-                      onOrderUpdated={refetchOrders}
-                    />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Cancelled Orders */}
+                {orders.filter(o => o.status === 'cancelled').length > 0 && (
+                  <div className="card-elevated p-6">
+                    <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                      Отменённые заявки
+                      <Badge variant="secondary">
+                        {orders.filter(o => o.status === 'cancelled').length}
+                      </Badge>
+                    </h2>
+                    <div className="space-y-4">
+                      {orders.filter(o => o.status === 'cancelled').map((order) => (
+                        <div
+                          key={order.id}
+                          className="p-4 rounded-lg border border-border bg-muted/30"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <h3 className="font-medium text-muted-foreground">
+                                {order.listing_snapshot.name}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {order.listing_snapshot.category}
+                              </p>
+                            </div>
+                            <Badge className={getStatusColor(order.status)}>
+                              {getStatusLabel(order.status)}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between mt-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(order.created_at).toLocaleDateString("ru-RU")}
+                              </p>
+                              <p className="font-semibold text-muted-foreground">
+                                {formatPrice(order.price)}
+                              </p>
+                            </div>
+                            {order.listing_id && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  // Add listing back to cart for reorder
+                                  toggleCart(order.listing_id!);
+                                  setSearchParams({ tab: "cart" });
+                                }}
+                              >
+                                Оформить повторно
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
+
+                <OrderDetailDialog
+                  order={selectedOrder}
+                  open={orderDetailOpen}
+                  onOpenChange={setOrderDetailOpen}
+                  onOrderUpdated={refetchOrders}
+                />
               </div>
             </TabsContent>
 
