@@ -119,11 +119,7 @@ const ListingCard = ({
           </div>
           <div className="text-right">
             <p className="text-xs text-muted-foreground mb-1">Цена</p>
-            {isDemo ? (
-              <p className="text-lg font-bold text-muted-foreground">По запросу</p>
-            ) : (
-              <p className="text-lg font-bold text-primary">{priceFormatted}</p>
-            )}
+            <p className="text-lg font-bold text-primary">{priceFormatted}</p>
           </div>
         </div>
 
