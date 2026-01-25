@@ -46,7 +46,7 @@ const HowItWorks = () => {
 
         <div className="relative">
           {/* Connection Line */}
-          <div className="hidden lg:block absolute top-24 left-[10%] right-[10%] h-0.5 bg-border" />
+          <div className="hidden lg:block absolute top-8 left-[10%] right-[10%] h-0.5 bg-border" />
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
             {steps.map((step, index) => (
