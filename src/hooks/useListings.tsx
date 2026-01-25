@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { demoListings, getDemoListingById, DemoListing } from "@/data/demoListings";
 
 export interface Listing {
   id: string;
@@ -18,7 +19,11 @@ export interface Listing {
   favorites_count: number;
   cart_count: number;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+  is_demo?: boolean;
+  demo_label?: string;
+  legal_status?: string;
+  can_buy?: boolean;
 }
 
 export const useListings = () => {
@@ -34,9 +39,65 @@ export const useListings = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setListings(data || []);
+      
+      // Mark real listings
+      const realListings: Listing[] = (data || []).map(item => ({
+        ...item,
+        documents: item.documents || [],
+        is_demo: false,
+        can_buy: true,
+      }));
+      
+      // Convert demo listings to Listing type
+      const demoItems: Listing[] = demoListings.map(demo => ({
+        id: demo.id,
+        user_id: demo.user_id,
+        category: demo.category,
+        name: demo.name,
+        description: demo.description,
+        registration_number: demo.registration_number,
+        price: demo.price,
+        price_negotiable: demo.price_negotiable,
+        documents: [],
+        status: demo.status,
+        views_count: demo.views_count,
+        favorites_count: demo.favorites_count,
+        cart_count: demo.cart_count,
+        created_at: demo.created_at,
+        is_demo: true,
+        demo_label: demo.demo_label,
+        legal_status: demo.legal_status,
+        can_buy: false,
+      }));
+      
+      // Sort: real items first, then demo items
+      const combined = [...realListings, ...demoItems];
+      
+      setListings(combined);
     } catch (error) {
       console.error("Error fetching listings:", error);
+      // On error, still show demo listings
+      const demoItems: Listing[] = demoListings.map(demo => ({
+        id: demo.id,
+        user_id: demo.user_id,
+        category: demo.category,
+        name: demo.name,
+        description: demo.description,
+        registration_number: demo.registration_number,
+        price: demo.price,
+        price_negotiable: demo.price_negotiable,
+        documents: [],
+        status: demo.status,
+        views_count: demo.views_count,
+        favorites_count: demo.favorites_count,
+        cart_count: demo.cart_count,
+        created_at: demo.created_at,
+        is_demo: true,
+        demo_label: demo.demo_label,
+        legal_status: demo.legal_status,
+        can_buy: false,
+      }));
+      setListings(demoItems);
     } finally {
       setLoading(false);
     }
@@ -47,6 +108,34 @@ export const useListings = () => {
   }, [fetchListings]);
 
   const getListingById = async (id: string): Promise<Listing | null> => {
+    // Check if it's a demo listing first
+    if (id.startsWith("demo-")) {
+      const demo = getDemoListingById(id);
+      if (demo) {
+        return {
+          id: demo.id,
+          user_id: demo.user_id,
+          category: demo.category,
+          name: demo.name,
+          description: demo.description,
+          registration_number: demo.registration_number,
+          price: demo.price,
+          price_negotiable: demo.price_negotiable,
+          documents: [],
+          status: demo.status,
+          views_count: demo.views_count,
+          favorites_count: demo.favorites_count,
+          cart_count: demo.cart_count,
+          created_at: demo.created_at,
+          is_demo: true,
+          demo_label: demo.demo_label,
+          legal_status: demo.legal_status,
+          can_buy: false,
+        };
+      }
+      return null;
+    }
+    
     try {
       const { data, error } = await supabase
         .from("ip_listings")
@@ -55,7 +144,15 @@ export const useListings = () => {
         .maybeSingle();
 
       if (error) throw error;
-      return data;
+      if (data) {
+        return {
+          ...data,
+          documents: data.documents || [],
+          is_demo: false,
+          can_buy: true,
+        };
+      }
+      return null;
     } catch (error) {
       console.error("Error fetching listing:", error);
       return null;
@@ -63,6 +160,9 @@ export const useListings = () => {
   };
 
   const trackView = async (listingId: string, userId?: string) => {
+    // Don't track views for demo listings
+    if (listingId.startsWith("demo-")) return;
+    
     try {
       await supabase.from("listing_views").insert({
         listing_id: listingId,

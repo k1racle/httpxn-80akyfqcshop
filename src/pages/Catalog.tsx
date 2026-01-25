@@ -142,9 +142,11 @@ const Catalog = () => {
                   registrationNumber={item.registration_number || "—"}
                   price={item.price || 0}
                   priceFormatted={formatPrice(item.price)}
-                  status={item.status === "published" ? "verified" : "pending"}
+                  status={item.is_demo ? "demo" : (item.status === "published" ? "verified" : "pending")}
                   views={item.views_count || 0}
                   description={item.description || ""}
+                  isDemo={item.is_demo}
+                  demoLabel={item.demo_label}
                 />
               ))}
             </div>
