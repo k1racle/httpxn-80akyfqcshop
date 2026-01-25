@@ -121,7 +121,7 @@ const formatDateShort = (dateStr: string) =>
 const getSubmissionStatusLabel = (status: string) => {
   switch (status) {
     case "pending":
-      return "Ожидает";
+      return "Ожидает подтверждения";
     case "reviewing":
       return "На проверке";
     case "approved":
