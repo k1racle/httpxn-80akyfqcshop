@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, User, Building2, FileText } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2, User, Building2, FileText, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -64,6 +65,7 @@ const CheckoutDialog = ({ open, onOpenChange, cartItems, onSuccess }: CheckoutDi
   const [companyEmail, setCompanyEmail] = useState(user?.email || "");
   
   const [comment, setComment] = useState("");
+  const [wantsInstallment, setWantsInstallment] = useState(false);
 
   const totalPrice = cartItems.reduce((sum, item) => sum + (item.listing?.price || 0), 0);
 
@@ -79,6 +81,7 @@ const CheckoutDialog = ({ open, onOpenChange, cartItems, onSuccess }: CheckoutDi
     setCompanyPhone("");
     setCompanyEmail(user?.email || "");
     setComment("");
+    setWantsInstallment(false);
   };
 
   const handleClose = () => {
@@ -129,6 +132,7 @@ const CheckoutDialog = ({ open, onOpenChange, cartItems, onSuccess }: CheckoutDi
               ? { full_name: fullName, phone, email }
               : { company_name: companyName, inn, contact_person: contactPerson, phone: companyPhone, email: companyEmail },
             comment: comment,
+            wants_installment: wantsInstallment,
           },
           price: item.listing.price || 0,
           contact_email: buyerType === "individual" ? email : companyEmail,
@@ -332,6 +336,26 @@ const CheckoutDialog = ({ open, onOpenChange, cartItems, onSuccess }: CheckoutDi
                 onChange={(e) => setComment(e.target.value)}
                 rows={3}
               />
+            </div>
+
+            <div className="flex items-start space-x-3 p-4 rounded-lg border border-border bg-muted/30">
+              <Checkbox
+                id="installment"
+                checked={wantsInstallment}
+                onCheckedChange={(checked) => setWantsInstallment(checked === true)}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <label
+                  htmlFor="installment"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center gap-2"
+                >
+                  <CreditCard className="h-4 w-4 text-primary" />
+                  Оформить в рассрочку
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  Рассрочка оформляется на стороне банка-партнёра. Менеджер свяжется с вами для уточнения условий.
+                </p>
+              </div>
             </div>
 
             <div className="border-t pt-4">
