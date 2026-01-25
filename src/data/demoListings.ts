@@ -1,5 +1,8 @@
-// Demo listings data - 500 items across 12 categories
+// Demo listings data - 470 items across 12 categories
 // These are exploratory items, not real IP assets
+// Distribution: techpacks:40, ai-models:35, software:60, datasets:30, patents:45,
+//               databases:35, knowhow:30, specifications:35, trademarks:60, copyrights:45,
+//               digital-twins:25, prototypes:30
 
 export interface DemoListing {
   id: string;
@@ -465,18 +468,32 @@ const generateRandomPrice = (min: number, max: number): number => {
   return Math.round(price / 10000) * 10000;
 };
 
+// Exact distribution per category (total: 470)
+const categoryDistribution: Record<string, number> = {
+  techpacks: 40,
+  "ai-models": 35,
+  software: 60,
+  datasets: 30,
+  patents: 45,
+  databases: 35,
+  knowhow: 30,
+  specifications: 35,
+  trademarks: 60,
+  copyrights: 45,
+  "digital-twins": 25,
+  prototypes: 30,
+};
+
 const generateDemoListings = (): DemoListing[] => {
   const listings: DemoListing[] = [];
-  const categorySlugs = Object.keys(categoryNames);
-  const itemsPerCategory = Math.floor(500 / 12);
-  const remainder = 500 % 12;
+  const categorySlugs = Object.keys(categoryDistribution);
   
   let globalId = 1;
   
-  categorySlugs.forEach((categorySlug, categoryIndex) => {
+  categorySlugs.forEach((categorySlug) => {
     const category = categoryNames[categorySlug];
     const descriptionGenerator = categoryDescriptions[categorySlug];
-    const itemCount = itemsPerCategory + (categoryIndex < remainder ? 1 : 0);
+    const itemCount = categoryDistribution[categorySlug];
     
     for (let i = 0; i < itemCount; i++) {
       const nameIndex = i % category.names.length;
@@ -499,8 +516,8 @@ const generateDemoListings = (): DemoListing[] => {
         favorites_count: 0,
         cart_count: 0,
         is_demo: true,
-        demo_label: "Ознакомительный · недоступна для сделки",
-        legal_status: "Демо-карточка: сделки по объекту не совершаются",
+        demo_label: "Ознакомительный",
+        legal_status: "demo_example",
         can_buy: false,
         created_at: new Date(Date.now() - globalId * 60000).toISOString(),
         user_id: "demo-user",

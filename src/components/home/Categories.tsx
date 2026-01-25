@@ -21,7 +21,7 @@ const row1Categories = [
     title: "Технологические пакеты",
     description: "Готовые комплексные решения: патенты, спецификации, документация и структурированные данные",
     icon: Package,
-    count: 0,
+    count: 40,
     href: "/catalog?category=techpacks",
   },
   {
@@ -29,7 +29,7 @@ const row1Categories = [
     title: "Модели ИИ и алгоритмы",
     description: "Обученные ML-модели, нейросетевые алгоритмы и вычислительные методы для автоматизации задач",
     icon: Brain,
-    count: 0,
+    count: 35,
     href: "/catalog?category=ai-models",
   },
   {
@@ -37,7 +37,7 @@ const row1Categories = [
     title: "ПО, код, IT-продукты",
     description: "Программы для ЭВМ, модули, сервисы и готовые цифровые решения для внедрения в бизнес-процессы",
     icon: Code,
-    count: 234,
+    count: 60,
     href: "/catalog?category=software",
   },
   {
@@ -45,7 +45,7 @@ const row1Categories = [
     title: "Датасеты и выборки",
     description: "Коммерческие наборы данных для обучения ИИ, аналитики и разработки алгоритмов",
     icon: BarChart3,
-    count: 0,
+    count: 30,
     href: "/catalog?category=datasets",
   },
 ];
@@ -56,7 +56,7 @@ const row2Categories = [
     title: "Патенты",
     description: "Изобретения, полезные модели и промышленные образцы с зарегистрированными правами",
     icon: Lightbulb,
-    count: 89,
+    count: 45,
     href: "/catalog?category=patents",
   },
   {
@@ -64,7 +64,7 @@ const row2Categories = [
     title: "Базы данных",
     description: "Юридически защищённые структурированные массивы информации, доступные для передачи прав",
     icon: Database,
-    count: 45,
+    count: 35,
     href: "/catalog?category=databases",
   },
   {
@@ -72,7 +72,7 @@ const row2Categories = [
     title: "Ноу-хау",
     description: "Секреты производства, рецептуры, технологии и конфиденциальные методы работы",
     icon: Lock,
-    count: 32,
+    count: 30,
     href: "/catalog?category=knowhow",
   },
   {
@@ -80,7 +80,7 @@ const row2Categories = [
     title: "Техспецификации",
     description: "Чертежи, схемы, ТУ, регламенты и техническая документация для производственных процессов",
     icon: Cpu,
-    count: 69,
+    count: 35,
     href: "/catalog?category=specifications",
   },
 ];
@@ -91,7 +91,7 @@ const row3Categories = [
     title: "Товарные знаки",
     description: "Зарегистрированные бренды, знаки обслуживания, фирменные наименования и домены",
     icon: Bookmark,
-    count: 234,
+    count: 60,
     href: "/catalog?category=trademarks",
   },
   {
@@ -99,7 +99,7 @@ const row3Categories = [
     title: "Авторские права",
     description: "Тексты, дизайн, фото, видео и обучающие материалы с зарегистрированными правами автора",
     icon: FileText,
-    count: 121,
+    count: 45,
     href: "/catalog?category=copyrights",
   },
   {
@@ -107,7 +107,7 @@ const row3Categories = [
     title: "Digital Twins",
     description: "Цифровые двойники процессов, оборудования и объектов для моделирования и оптимизации",
     icon: Box,
-    count: 0,
+    count: 25,
     href: "/catalog?category=digital-twins",
   },
   {
@@ -115,7 +115,7 @@ const row3Categories = [
     title: "Прототипы и R&D",
     description: "Исследовательские разработки, экспериментальные материалы и решения на ранней стадии",
     icon: Beaker,
-    count: 23,
+    count: 30,
     href: "/catalog?category=prototypes",
   },
 ];
