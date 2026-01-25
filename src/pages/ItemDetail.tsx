@@ -203,6 +203,63 @@ const ItemDetail = () => {
                 </p>
               </div>
 
+              {/* Ознакомительные материалы - для изучения объекта */}
+              <div className="card-elevated p-6">
+                <h2 className="text-lg font-semibold mb-4">Ознакомительные материалы</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Изучите документы и технические характеристики объекта
+                </p>
+                
+                <div className="space-y-3">
+                  {/* Документы объекта */}
+                  {item.documents && item.documents.length > 0 ? (
+                    <div className="space-y-2">
+                      {item.documents.map((doc, index) => (
+                        <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-surface-subtle hover:bg-accent transition-colors cursor-pointer">
+                          <FileText className="h-5 w-5 text-primary" />
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-medium truncate block">{doc.split('/').pop()}</span>
+                            <span className="text-xs text-muted-foreground">Документ объекта</span>
+                          </div>
+                          <Badge variant="outline" className="text-xs shrink-0">Просмотр</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground italic">
+                      Документы не загружены
+                    </div>
+                  )}
+
+                  {/* Внешние источники для проверки */}
+                  {item.registration_number && (
+                    <div className="pt-3 border-t border-border">
+                      <p className="text-xs text-muted-foreground mb-2">Проверка в официальных реестрах:</p>
+                      <div className="flex flex-wrap gap-2">
+                        <a 
+                          href={`https://fips.ru/registers-doc-view/fips_servlet?DB=RUPAT&DocNumber=${item.registration_number?.replace(/[^\d]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                        >
+                          <Shield className="h-3.5 w-3.5" />
+                          Реестр ФИПС
+                        </a>
+                        <a 
+                          href="https://rospatent.gov.ru/ru/databases"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                        >
+                          <Building className="h-3.5 w-3.5" />
+                          Базы Роспатента
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Details */}
               <div className="card-elevated p-6">
                 <h2 className="text-lg font-semibold mb-4">Детали объекта</h2>
@@ -225,22 +282,6 @@ const ItemDetail = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Documents */}
-              {item.documents && item.documents.length > 0 && (
-                <div className="card-elevated p-6">
-                  <h2 className="text-lg font-semibold mb-4">Документация</h2>
-                  <ul className="space-y-2">
-                    {item.documents.map((doc, index) => (
-                      <li key={index} className="flex items-center gap-3 p-3 rounded-lg bg-surface-subtle">
-                        <FileText className="h-4 w-4 text-primary" />
-                        <span className="text-sm truncate flex-1">{doc.split('/').pop()}</span>
-                        <Badge variant="outline" className="text-xs">Доступен</Badge>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
 
             {/* Sidebar */}
