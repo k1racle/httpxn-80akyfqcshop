@@ -52,7 +52,7 @@ const FeaturedListings = () => {
       <div className="container-wide">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-12">
           <div>
-            <h2 className="text-3xl font-bold mb-2">Избранные объекты</h2>
+            <h2 className="text-3xl font-bold mb-2">Новые объекты</h2>
             <p className="text-muted-foreground">
               Актуальные предложения с подтверждённой документацией
             </p>
