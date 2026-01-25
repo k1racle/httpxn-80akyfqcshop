@@ -14,7 +14,8 @@ import {
   Users,
   Trash2,
   ExternalLink,
-  BarChart3
+  BarChart3,
+  ChevronRight
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -25,6 +26,7 @@ import { useOrders, getStatusLabel, getStatusColor, Order } from "@/hooks/useOrd
 import { supabase } from "@/integrations/supabase/client";
 import SubmissionCard from "@/components/dashboard/SubmissionCard";
 import CheckoutDialog from "@/components/dashboard/CheckoutDialog";
+import OrderDetailDialog from "@/components/dashboard/OrderDetailDialog";
 
 const formatPrice = (price: number | null) => {
   if (!price) return "Договорная";
@@ -60,6 +62,8 @@ const Dashboard = () => {
   const [cartWithListings, setCartWithListings] = useState<CartItemWithListing[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderDetailOpen, setOrderDetailOpen] = useState(false);
   
   // Get tab from URL params, default to "favorites"
   const tabFromUrl = searchParams.get("tab");
@@ -369,12 +373,17 @@ const Dashboard = () => {
                     {orders.map((order) => (
                       <div
                         key={order.id}
-                        className="p-4 rounded-lg border border-border"
+                        className="p-4 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors group"
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setOrderDetailOpen(true);
+                        }}
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="font-medium">
+                          <div className="flex-1">
+                            <h3 className="font-medium group-hover:text-primary transition-colors flex items-center gap-2">
                               {order.listing_snapshot.name}
+                              <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </h3>
                             <p className="text-sm text-muted-foreground">
                               {order.listing_snapshot.category}
@@ -400,19 +409,23 @@ const Dashboard = () => {
                               variant="hero"
                               size="sm"
                               className="w-full mt-4"
-                              asChild
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(order.payment_url!, "_blank");
+                              }}
                             >
-                              <a
-                                href={order.payment_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                Оплатить
-                              </a>
+                              Оплатить
                             </Button>
                           )}
                       </div>
                     ))}
+                    
+                    <OrderDetailDialog
+                      order={selectedOrder}
+                      open={orderDetailOpen}
+                      onOpenChange={setOrderDetailOpen}
+                      onOrderUpdated={refetchOrders}
+                    />
                   </div>
                 )}
               </div>
