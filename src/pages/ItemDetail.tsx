@@ -4,7 +4,6 @@ import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  CheckCircle, 
   ArrowLeft, 
   Shield, 
   FileText, 
@@ -14,7 +13,8 @@ import {
   Share2,
   Heart,
   ShoppingCart,
-  Loader2
+  Loader2,
+  AlertTriangle
 } from "lucide-react";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useCart } from "@/hooks/useCart";
@@ -23,6 +23,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useListings, Listing } from "@/hooks/useListings";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import StatusBadge from "@/components/catalog/StatusBadge";
+import { mapDbStatusToCode, LISTING_STATUSES, ListingStatusCode } from "@/types/listingStatus";
 
 const categoryLabels: Record<string, string> = {
   trademarks: "Товарные знаки",
@@ -134,7 +136,10 @@ const ItemDetail = () => {
   }
 
   const categoryLabel = categoryLabels[item.category] || item.category;
-  const isVerified = item.status === "published";
+  
+  // Определяем статус по жизненному циклу
+  const statusCode: ListingStatusCode = mapDbStatusToCode(item.status, item.is_demo);
+  const listingStatus = LISTING_STATUSES[statusCode];
 
   return (
     <Layout>
@@ -159,21 +164,15 @@ const ItemDetail = () => {
                     <Badge variant="secondary" className="badge-category">
                       {categoryLabel}
                     </Badge>
-                    {isVerified ? (
-                      <Badge className="badge-verified">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Проверен
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">На проверке</Badge>
-                    )}
+                    <StatusBadge statusCode={statusCode} />
                   </div>
                   <div className="flex items-center gap-2">
                     <Button 
                       variant="ghost" 
                       size="icon"
                       className={cn(isFav && "text-red-500")}
-                      onClick={() => id && toggleFavorite(id)}
+                      onClick={() => id && !item.is_demo && toggleFavorite(id)}
+                      disabled={!listingStatus.canTransact}
                     >
                       <Heart className={cn("h-4 w-4", isFav && "fill-current")} />
                     </Button>
@@ -246,48 +245,88 @@ const ItemDetail = () => {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Price Card */}
+              {/* Price Card - различается по статусам */}
               <div className="card-elevated p-6 sticky top-24">
-                <div className="mb-6">
-                  <p className="text-sm text-muted-foreground mb-1">Цена</p>
-                  <p className="text-3xl font-bold text-primary">{formatPrice(item.price)}</p>
-                  {item.price_negotiable && (
-                    <p className="text-sm text-muted-foreground mt-1">Возможен торг</p>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <Button 
-                    variant="hero" 
-                    size="lg" 
-                    className="w-full"
-                    onClick={handleBuyNow}
-                  >
-                    Оставить заявку на покупку
-                  </Button>
-                  <Button 
-                    variant={inCart ? "default" : "outline"} 
-                    size="lg" 
-                    className="w-full gap-2"
-                    onClick={() => id && toggleCart(id)}
-                  >
-                    <ShoppingCart className="h-4 w-4" />
-                    {inCart ? "В корзине" : "Добавить в корзину"}
-                  </Button>
-                </div>
-
-                {/* Trust Badge */}
-                <div className="mt-6 p-4 rounded-lg bg-accent border border-border">
-                  <div className="flex items-start gap-3">
-                    <Shield className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-sm font-semibold mb-1">Гарантия безопасной сделки</p>
-                      <p className="text-xs text-muted-foreground">
-                        Юридическая проверка, эскроу-платёж, оформление договора передачи прав
-                      </p>
+                {/* S0 - Ознакомительный: показываем предупреждение */}
+                {statusCode === 'S0' && (
+                  <div className="mb-6 p-4 rounded-lg bg-slate-100 border border-slate-200">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 text-slate-500 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700 mb-1">
+                          Ознакомительный объект
+                        </p>
+                        <p className="text-xs text-slate-600">
+                          Не участвует в сделках. Предназначен для демонстрации структуры каталога.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {/* S1 - На проверке */}
+                {statusCode === 'S1' && (
+                  <div className="mb-6">
+                    <p className="text-sm text-muted-foreground mb-1">Цена</p>
+                    <p className="text-3xl font-bold text-primary">{formatPrice(item.price)}</p>
+                    <p className="text-sm text-amber-600 mt-2">Ожидание проверки платформой</p>
+                  </div>
+                )}
+
+                {/* S2 - Доступен для сделки */}
+                {statusCode === 'S2' && (
+                  <>
+                    <div className="mb-6">
+                      <p className="text-sm text-muted-foreground mb-1">Цена</p>
+                      <p className="text-3xl font-bold text-primary">{formatPrice(item.price)}</p>
+                      {item.price_negotiable && (
+                        <p className="text-sm text-muted-foreground mt-1">Возможен торг</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <Button 
+                        variant="hero" 
+                        size="lg" 
+                        className="w-full"
+                        onClick={handleBuyNow}
+                      >
+                        Оставить заявку на покупку
+                      </Button>
+                      <Button 
+                        variant={inCart ? "default" : "outline"} 
+                        size="lg" 
+                        className="w-full gap-2"
+                        onClick={() => id && toggleCart(id)}
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                        {inCart ? "В корзине" : "Добавить в корзину"}
+                      </Button>
+                    </div>
+
+                    {/* Trust Badge - только для S2 */}
+                    <div className="mt-6 p-4 rounded-lg bg-accent border border-border">
+                      <div className="flex items-start gap-3">
+                        <Shield className="h-5 w-5 text-primary mt-0.5" />
+                        <div>
+                          <p className="text-sm font-semibold mb-1">Гарантия безопасной сделки</p>
+                          <p className="text-xs text-muted-foreground">
+                            Юридическая проверка, эскроу-платёж, оформление договора передачи прав
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* S3 - Архив */}
+                {statusCode === 'S3' && (
+                  <div className="p-4 rounded-lg bg-gray-100 border border-gray-200">
+                    <p className="text-sm text-gray-600">
+                      Объект снят с публикации и находится в архиве.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
