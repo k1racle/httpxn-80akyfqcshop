@@ -35,5 +35,90 @@
     <noscript><div><img src="https://mc.yandex.ru/watch/106421525" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- SEO: динамическое обновление title и meta по URL -->
+    <script>
+      function updateSEO(title, description) {
+        document.title = title;
+        let metaDesc = document.querySelector('meta[name="description"]');
+        if (!metaDesc) {
+          metaDesc = document.createElement('meta');
+          metaDesc.name = 'description';
+          document.head.appendChild(metaDesc);
+        }
+        metaDesc.content = description;
+        
+        const ogTitle = document.querySelector('meta[property="og:title"]') || document.createElement('meta');
+        ogTitle.setAttribute('property', 'og:title');
+        ogTitle.content = title;
+        if (!document.querySelector('meta[property="og:title"]')) document.head.appendChild(ogTitle);
+        
+        const ogDesc = document.querySelector('meta[property="og:description"]') || document.createElement('meta');
+        ogDesc.setAttribute('property', 'og:description');
+        ogDesc.content = description;
+        if (!document.querySelector('meta[property="og:description"]')) document.head.appendChild(ogDesc);
+      }
+
+      window.addEventListener('popstate', updateSeoByPath);
+      const originalPushState = history.pushState;
+      history.pushState = function() {
+        originalPushState.apply(this, arguments);
+        updateSeoByPath();
+      };
+
+      function updateSeoByPath() {
+        const path = window.location.pathname;
+        if (path === '/' || path === '') {
+          updateSEO(
+            'Патент.Шоп — Маркетплейс патентов, товарных знаков и ПО в России и СНГ',
+            'Национальная платформа для покупки и продажи интеллектуальной собственности: патенты, товарные знаки, ПО, базы данных. Юридическая проверка, гарантия сделок.'
+          );
+        } else if (path === '/catalog') {
+          updateSEO(
+            'Каталог ИС — 500+ объектов | Патент.Шоп',
+            'Купить патенты, товарные знаки, ПО. 505+ объектов с проверкой. Поиск, фильтры, безопасные сделки.'
+          );
+        } else if (path === '/sell') {
+          updateSEO(
+            'Разместить объект ИС на продажу — Патент.Шоп',
+            'Бесплатно разместите патент, товарный знак или ПО. Форма с AI-генерацией описания, загрузка документов, публикация после проверки.'
+          );
+        } else if (path === '/request') {
+          updateSEO(
+            'Оставить заявку на поиск объекта ИС — Патент.Шоп',
+            'Подберём патент, товарный знак или ПО по вашим требованиям. Форма поиска, юридическая экспертиза, быстрый результат.'
+          );
+        } else if (path === '/legal/offer') {
+          updateSEO(
+            'Публичная оферта — Патент.Шоп',
+            'Условия использования платформы: размещение, проверка и сделки с ИС.'
+          );
+        } else if (path === '/about') {
+          updateSEO(
+            'О платформе Патент.Шоп — Команда и миссия',
+            'Узнайте о маркетплейсе интеллектуальной собственности: миссия, команда, гарантии безопасности сделок.'
+          );
+        } else if (path === '/auth') {
+          updateSEO(
+            'Вход и регистрация | Патент.Шоп',
+            'Войдите или зарегистрируйтесь для доступа к покупке и продаже объектов ИС.'
+          );
+        } else if (path === '/dashboard') {
+          updateSEO(
+            'Личный кабинет | Патент.Шоп',
+            'Управляйте объектами ИС, заявками и заказами.'
+          );
+        } else if (path.startsWith('/catalog/')) {
+          updateSEO(
+            'Объект ИС | Патент.Шоп',
+            'Подробная информация об объекте интеллектуальной собственности.'
+          );
+        } else {
+          updateSEO('Патент.Шоп — Интеллектуальная собственность', 'Маркетплейс ИС в России и СНГ');
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', updateSeoByPath);
+    </script>
   </body>
 </html>
