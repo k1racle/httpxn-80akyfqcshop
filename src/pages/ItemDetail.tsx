@@ -109,6 +109,12 @@ const ItemDetail = () => {
     }
   };
 
+  // Динамические мета-данные для SEO
+  const pageMeta = item ? {
+    title: `${item.name} — ${categoryLabels[item.category] || item.category} | Патент.Shop`,
+    description: item.description?.slice(0, 155) || `Купить ${item.name}. ${categoryLabels[item.category] || ''} с проверенной документацией.`,
+  } : undefined;
+
   if (loading) {
     return (
       <Layout>
@@ -142,7 +148,7 @@ const ItemDetail = () => {
   const listingStatus = LISTING_STATUSES[statusCode];
 
   return (
-    <Layout>
+    <Layout meta={pageMeta}>
       <section className="section-padding">
         <div className="container-wide">
           {/* Breadcrumb */}
