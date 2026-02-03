@@ -33,6 +33,7 @@ import {
   XCircle,
   Clock,
   AlertTriangle,
+  LayoutGrid,
 } from "lucide-react";
 import { useAdmin } from "@/hooks/useAdmin";
 import {
@@ -46,6 +47,8 @@ import {
   RequestStatus,
   OrderStatusType,
 } from "@/hooks/useAdminData";
+import { useAdminListings } from "@/hooks/useAdminListings";
+import CatalogTab from "@/components/admin/CatalogTab";
 
 const formatPrice = (price: number | null) => {
   if (!price) return "Договорная";
@@ -124,6 +127,7 @@ const Admin = () => {
     updateOrderStatus,
     refetch: refetchOrders,
   } = useAdminOrders();
+  const { publishedCount } = useAdminListings();
 
   const [selectedSubmission, setSelectedSubmission] = useState<IpSubmission | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<IpRequest | null>(null);
@@ -188,23 +192,23 @@ const Admin = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+            <div className="card-elevated p-4 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <LayoutGrid className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{publishedCount}</p>
+                <p className="text-sm text-muted-foreground">В каталоге</p>
+              </div>
+            </div>
             <div className="card-elevated p-4 flex items-center gap-4">
               <div className="h-12 w-12 rounded-lg bg-yellow-100 flex items-center justify-center">
                 <Package className="h-6 w-6 text-yellow-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{pendingSubmissions}</p>
-                <p className="text-sm text-muted-foreground">Заявок на размещение</p>
-              </div>
-            </div>
-            <div className="card-elevated p-4 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Search className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{pendingRequests}</p>
-                <p className="text-sm text-muted-foreground">Заявок на поиск</p>
+                <p className="text-sm text-muted-foreground">На модерации</p>
               </div>
             </div>
             <div className="card-elevated p-4 flex items-center gap-4">
@@ -213,13 +217,38 @@ const Admin = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold">{pendingOrders}</p>
-                <p className="text-sm text-muted-foreground">Заказов в обработке</p>
+                <p className="text-sm text-muted-foreground">Заказов</p>
+              </div>
+            </div>
+            <div className="card-elevated p-4 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                <Search className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{pendingRequests}</p>
+                <p className="text-sm text-muted-foreground">Запросов</p>
               </div>
             </div>
           </div>
 
-          <Tabs defaultValue="orders" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+          <Tabs defaultValue="catalog" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+              <TabsTrigger value="catalog" className="gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                <span className="hidden sm:inline">Каталог</span>
+                <Badge variant="outline" className="ml-1">
+                  {publishedCount}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="submissions" className="gap-2">
+                <Package className="h-4 w-4" />
+                <span className="hidden sm:inline">Модерация</span>
+                {pendingSubmissions > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {pendingSubmissions}
+                  </Badge>
+                )}
+              </TabsTrigger>
               <TabsTrigger value="orders" className="gap-2">
                 <ShoppingCart className="h-4 w-4" />
                 <span className="hidden sm:inline">Заказы</span>
@@ -229,18 +258,9 @@ const Admin = () => {
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="submissions" className="gap-2">
-                <Package className="h-4 w-4" />
-                <span className="hidden sm:inline">Размещение</span>
-                {pendingSubmissions > 0 && (
-                  <Badge variant="secondary" className="ml-1">
-                    {pendingSubmissions}
-                  </Badge>
-                )}
-              </TabsTrigger>
               <TabsTrigger value="requests" className="gap-2">
                 <Search className="h-4 w-4" />
-                <span className="hidden sm:inline">Поиск</span>
+                <span className="hidden sm:inline">Запросы</span>
                 {pendingRequests > 0 && (
                   <Badge variant="secondary" className="ml-1">
                     {pendingRequests}
@@ -249,7 +269,10 @@ const Admin = () => {
               </TabsTrigger>
             </TabsList>
 
-            {/* Orders Tab */}
+            {/* Catalog Tab */}
+            <TabsContent value="catalog">
+              <CatalogTab />
+            </TabsContent>
             <TabsContent value="orders">
               <div className="card-elevated p-6">
                 <div className="flex items-center justify-between mb-6">
