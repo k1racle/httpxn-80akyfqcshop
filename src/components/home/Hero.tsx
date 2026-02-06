@@ -30,7 +30,7 @@ const Hero = () => {
 
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6 animate-fade-up delay-100">
-            Национальная платформа
+            Маркетплейс
             <br />
             <span className="text-gradient">интеллектуальной собственности</span>
           </h1>
